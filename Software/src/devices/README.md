@@ -15,7 +15,7 @@ Technical documentation for developers adding new BLE devices to the remote.
 
 Devices are discovered by their primary service UUID and instantiated via a factory registry.
 
-- Registry map: `src/devices/registry.hpp`
+- Registry map: `src/devices/registry.h` and `src/devices/registry.cpp`
 - Known service UUIDs: `src/devices/serviceUUIDs.h`
 - Device base class: `src/devices/device.h`
 
@@ -34,20 +34,26 @@ Devices are discovered by their primary service UUID and instantiated via a fact
 static const char NEW_DEVICE_SERVICE_ID[] PROGMEM = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
 ```
 
-3. **Register a factory in `registry.hpp`**
+3. **Register a factory in `registry.cpp`**
 
-- Include your device header and add an entry mapping the service UUID to a factory that returns a `Device*` of your concrete class.
+- Include your device header and add an entry in the `initRegistry()` function mapping the service UUID to a factory that returns a `Device*` of your concrete class.
 
 ```cpp
-// src/devices/registry.hpp
+// src/devices/registry.cpp
 #include "your_vendor/your_device/your_device.h"
 
-static const std::unordered_map<String, DeviceFactory> registry = {
-    {OSSM_SERVICE_ID, []() -> Device* { return new OSSM(); }},
-    {DOMI_SERVICE_ID, []() -> Device* { return new Domi2(); }},
-    {NEW_DEVICE_SERVICE_ID, []() -> Device* { return new YourDeviceClass(); }}
-};
+void initRegistry() {
+    registry.clear();
+    
+    registry.emplace(OSSM_SERVICE_ID, [](const NimBLEAdvertisedDevice *ad) -> Device* { return new OSSM(ad); });
+    registry.emplace(DOMI_SERVICE_ID, [](const NimBLEAdvertisedDevice *ad) -> Device* { return new Domi2(ad); });
+    registry.emplace(NEW_DEVICE_SERVICE_ID, [](const NimBLEAdvertisedDevice *ad) -> Device* { return new YourDeviceClass(ad); });
+    
+    // ... rest of LittleFS loading ...
+}
 ```
+
+**Note:** Call `initRegistry()` once during startup (e.g., in `setup()`) before using the registry.
 
 4. **Provide a concrete `Device` implementation**
 
