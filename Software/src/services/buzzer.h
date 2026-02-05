@@ -20,7 +20,8 @@ enum class BuzzerPattern {
     DEVICE_CONNECTED,
     DEVICE_DISCONNECTED,
     PAUSED,
-    PLAY
+    PLAY,
+    RADAR_PING
 };
 
 // Initialize the buzzer system

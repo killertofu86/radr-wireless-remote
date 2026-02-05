@@ -45,6 +45,8 @@ class ScanCallbacks : public NimBLEScanCallbacks {
             factory = getDeviceFactory(serviceUUID);
 
             if (factory != nullptr) {
+                ESP_LOGI("DEBUG_FOLLOWER", "Found factory for service UUID: %s",
+                         serviceUUID.toString().c_str());
                 break;
             }
         }
@@ -71,13 +73,15 @@ class ScanCallbacks : public NimBLEScanCallbacks {
         newDevice.rssi = advertisedDevice->getRSSI();
         discoveredDevices.push_back(newDevice);
 
-        ESP_LOGI(TAG_COMS, "Found device: %s (RSSI: %d)", newDevice.name.c_str(), newDevice.rssi);
+        ESP_LOGI(TAG_COMS, "Found device: %s (RSSI: %d)",
+                 newDevice.name.c_str(), newDevice.rssi);
 
         return;
     }
-    
-    void onScanEnd(const NimBLEScanResults& results, int reason) override {
-        ESP_LOGI(TAG_COMS, "Scan ended. Found %d devices", discoveredDevices.size());
+
+    void onScanEnd(const NimBLEScanResults &results, int reason) override {
+        ESP_LOGI(TAG_COMS, "Scan ended. Found %d devices",
+                 discoveredDevices.size());
     }
 } scanCallbacks;
 
@@ -177,7 +181,7 @@ void initBLE() {
     ESP_LOGI(TAG_COMS, "Scanning for peripherals");
 }
 
-std::vector<DiscoveredDevice>& getDiscoveredDevices() {
+std::vector<DiscoveredDevice> &getDiscoveredDevices() {
     return discoveredDevices;
 }
 
@@ -206,29 +210,31 @@ void connectToDiscoveredDevice(int index) {
 void startScanWithTimeout(int timeoutMs, void (*onComplete)()) {
     clearDiscoveredDevices();
     NimBLEScan *pScan = NimBLEDevice::getScan();
-    
+
     // Start a task to monitor scanning and call callback
     // NOTE: Stack size must be large enough to handle the callback chain,
     // which includes state machine processing and UI operations
-    xTaskCreate([](void* param) {
-        auto callback = (void (*)())param;
-        
-        // Wait for scan timeout
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
-        
-        // Stop scanning
-        NimBLEScan *pScan = NimBLEDevice::getScan();
-        if (pScan->isScanning()) {
-            pScan->stop();
-        }
-        
-        // Call completion callback
-        if (callback) {
-            callback();
-        }
-        
-        vTaskDelete(NULL);
-    }, "scanMonitor", 8192, (void*)onComplete, 1, NULL);
-    
+    xTaskCreate(
+        [](void *param) {
+            auto callback = (void (*)())param;
+
+            // Wait for scan timeout
+            vTaskDelay(5000 / portTICK_PERIOD_MS);
+
+            // Stop scanning
+            NimBLEScan *pScan = NimBLEDevice::getScan();
+            if (pScan->isScanning()) {
+                pScan->stop();
+            }
+
+            // Call completion callback
+            if (callback) {
+                callback();
+            }
+
+            vTaskDelete(NULL);
+        },
+        "scanMonitor", 8192, (void *)onComplete, 1, NULL);
+
     pScan->start(0);
 }

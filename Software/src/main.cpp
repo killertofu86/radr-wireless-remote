@@ -14,8 +14,8 @@
 #include "services/display.h"
 #include "services/encoder.h"
 #include "services/imu.h"
-#include "services/leds.h"
 #include "services/lastInteraction.h"
+#include "services/leds.h"
 #include "services/memory.h"
 #include "services/vibrator.h"
 #include "services/wm.h"
@@ -39,6 +39,10 @@ void resetMiddleButtonCounter() { middleButtonPressCount = 0; }
 void setup() {
     Serial.begin(115200);
 
+#ifdef DEBUG
+    delay(5000);
+#endif
+
     // Version 1.x of the PCB Boards cannot use PSRAM
     if (psramInit()) {
         ESP_LOGI(TAG, "PSRAM initialized");
@@ -50,14 +54,20 @@ void setup() {
 
     // init buttons
     leftShoulderBtn = OneButton(pins::BTN_L_SHOULDER, true, true);
-    leftShoulderBtn.attachClick(
-        []() { setNotIdle("left_shoulder_btn"); stateMachine->process_event(left_shoulder_pressed()); });
+    leftShoulderBtn.attachClick([]() {
+        setNotIdle("left_shoulder_btn");
+        stateMachine->process_event(left_shoulder_pressed());
+    });
     rightShoulderBtn = OneButton(pins::BTN_R_SHOULDER, true, true);
-    rightShoulderBtn.attachClick(
-        []() { setNotIdle("right_shoulder_btn"); stateMachine->process_event(right_shoulder_pressed()); });
+    rightShoulderBtn.attachClick([]() {
+        setNotIdle("right_shoulder_btn");
+        stateMachine->process_event(right_shoulder_pressed());
+    });
     underLeftBtn = OneButton(pins::BTN_UNDER_L, true, true);
-    underLeftBtn.attachClick(
-        []() { setNotIdle("under_left_btn"); stateMachine->process_event(left_button_pressed()); });
+    underLeftBtn.attachClick([]() {
+        setNotIdle("under_left_btn");
+        stateMachine->process_event(left_button_pressed());
+    });
     underCenterBtn = OneButton(pins::BTN_UNDER_C, true, true);
     underCenterBtn.attachClick([]() {
         setNotIdle("under_center_btn");
@@ -72,10 +82,13 @@ void setup() {
         }
     });
     underRightBtn = OneButton(pins::BTN_UNDER_R, true, true);
-    underRightBtn.attachClick(
-        []() { setNotIdle("under_right_btn"); stateMachine->process_event(right_button_pressed()); });
+    underRightBtn.attachClick([]() {
+        setNotIdle("under_right_btn");
+        stateMachine->process_event(right_button_pressed());
+    });
 
     initMemoryService();
+    initRegistry();
     initEncoderService();
     initFastLEDs();
     initWM();

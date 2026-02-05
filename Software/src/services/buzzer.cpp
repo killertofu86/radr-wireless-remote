@@ -26,7 +26,9 @@ std::unordered_map<BuzzerPattern, std::vector<Beat>> PATTERN_MAP = {
     {BuzzerPattern::DEVICE_DISCONNECTED,
      {{1568, 100}, {1319, 100}, {1047, 150}}},
     {BuzzerPattern::PAUSED, {{800, 150}, {800, 150}}},
-    {BuzzerPattern::PLAY, {{1200, 100}, {1400, 100}}}};
+    {BuzzerPattern::PLAY, {{1200, 100}, {1400, 100}}},
+    {BuzzerPattern::RADAR_PING,
+     {{1400, 120}, {1200, 80}, {1000, 50}, {800, 30}, {600, 20}}}};
 
 void buzzerTask(void *parameter) {
     while (true) {
@@ -38,10 +40,16 @@ void buzzerTask(void *parameter) {
         // Mario coin two-note motif: E7, G7 (approx). Adjust as desired.
         const std::vector<Beat> &beats = PATTERN_MAP[currentPattern];
         for (const Beat &beat : beats) {
+#ifdef MUTE
+            ESP_LOGI("BUZZER", "BZZZZZZZZ");
+            vTaskDelay(pdMS_TO_TICKS(beat.duration));
+
+#else
             tone(pins::BUZZER_PIN, beat.frequency);
             vTaskDelay(pdMS_TO_TICKS(beat.duration));
             noTone(pins::BUZZER_PIN);
             vTaskDelay(1);
+#endif
         }
 
         currentPattern = BuzzerPattern::NONE;

@@ -29,7 +29,7 @@
 
 // Forward declarations to avoid circular dependencies
 struct DiscoveredDevice;
-std::vector<DiscoveredDevice>& getDiscoveredDevices();
+std::vector<DiscoveredDevice> &getDiscoveredDevices();
 void clearDiscoveredDevices();
 void connectToDiscoveredDevice(int index);
 void startScanWithTimeout(int timeoutMs, void (*onComplete)());
@@ -109,9 +109,7 @@ namespace actions {
                                 1);
     };
 
-    auto search = []() {
-        startScanWithTimeout(5000, onScanComplete);
-    };
+    auto search = []() { startScanWithTimeout(5000, onScanComplete); };
 
     auto drawDeviceList = []() {
         // Stop scanning when we enter the device list
@@ -119,18 +117,18 @@ namespace actions {
         if (pScan->isScanning()) {
             pScan->stop();
         }
-        
+
         // This will be implemented in menus.cpp
         drawDeviceListMenu();
     };
 
-    auto selectDevice = []() {
-        connectToDiscoveredDevice(currentOption);
+    auto play = [](BuzzerPattern pattern) {
+                return [](BuzzerPattern pattern) { playBuzzerPattern(pattern); };
     };
 
-    auto clearDeviceList = []() {
-        clearDiscoveredDevices();
-    };
+    auto selectDevice = []() { connectToDiscoveredDevice(currentOption); };
+
+    auto clearDeviceList = []() { clearDiscoveredDevices(); };
 
     auto stop = []() {
         if (device == nullptr) {
@@ -243,8 +241,8 @@ namespace actions {
         // Use light sleep - more reliable wake-up
         esp_light_sleep_start();
 
-        // Skip GPIO wake-up cleanup - just restart immediately to avoid conflicts
-        // The restart will clean up everything properly
+        // Skip GPIO wake-up cleanup - just restart immediately to avoid
+        // conflicts The restart will clean up everything properly
         espSilentRestart();
     };
 
