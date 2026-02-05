@@ -29,7 +29,7 @@ jobs:
         id: generate_token
         uses: actions/create-github-app-token@v2
         with:
-          app-id: ${{ vars.RAD_VERSION_CONTROL_APP_ID }}
+          app-id: ${{ secrets.RAD_VERSION_CONTROL_APP_ID }}
           private-key: ${{ secrets.RAD_VERSION_CONTROL_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}
