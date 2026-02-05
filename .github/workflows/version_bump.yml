@@ -26,7 +26,6 @@ jobs:
           fi
 
       - name: Generate GitHub App Token
-        if: ${{ steps.bot_check.outputs.is_bot != 'true' && vars.RAD_VERSION_CONTROL_APP_ID != '' }}
         id: generate_token
         uses: actions/create-github-app-token@v2
         with:
