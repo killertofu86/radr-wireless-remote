@@ -211,7 +211,7 @@ namespace actions {
         wm.setConnectRetries(5);
         wm.setEnableConfigPortal(true);
         wm.setCleanConnect(true);
-        wm.startConfigPortal("OSSM Remote Setup");
+        wm.startConfigPortal("RADR Setup");
 
         // if the wifi is not currently connected then make a small task the
         // looks for the wifi connection and sends an event.
