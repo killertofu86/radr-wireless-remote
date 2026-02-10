@@ -133,6 +133,7 @@ echo "$NEW_VERSION"
 
 if [[ -n "$GITHUB_OUTPUT" ]]; then
   echo "NEXT_VERSION=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+  echo "BUMP_TYPE=$BUMP_TYPE" >> "$GITHUB_OUTPUT"
 fi
 
 echo "::endgroup::"
