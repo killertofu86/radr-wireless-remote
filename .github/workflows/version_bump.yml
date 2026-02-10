@@ -109,6 +109,58 @@ jobs:
           cd Software
           pio run --target buildfs -e production
 
+      - name: Install Cursor CLI
+        if: ${{ steps.bot_check.outputs.is_bot != 'true' && steps.check_changes.outputs.skip != 'true' }}
+        run: |
+          curl https://cursor.com/install -fsS | bash
+          echo "$HOME/.cursor/bin" >> $GITHUB_PATH
+
+      - name: Update changelog
+        if: ${{ steps.bot_check.outputs.is_bot != 'true' && steps.check_changes.outputs.skip != 'true' }}
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          BUMP_TYPE: ${{ steps.get_next_version.outputs.BUMP_TYPE }}
+          NEXT_VERSION: ${{ steps.get_next_version.outputs.NEXT_VERSION }}
+        run: |
+          CHANGELOG_PATH="Documentation/radr/guides/changelog/overview.mdx"
+          
+          # Get the diff of changes (excluding version files and markdown)
+          DIFF=$(git diff HEAD~1 HEAD --unified=3 -- . ':!**/Version.h' ':!**/version.json' ':!*.md' || echo "No diff available")
+          
+          # Escape the diff for shell
+          ESCAPED_DIFF=$(printf '%s' "$DIFF" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
+          
+          if [[ "$BUMP_TYPE" == "patch" ]]; then
+            PROMPT="You are updating the RADR changelog. A patch version bump to ${NEXT_VERSION} has occurred. 
+
+Analyze this diff and append patch notes to the MOST RECENT <Update> section in ${CHANGELOG_PATH}. Do NOT create a new <Update> section - add bullet points to the existing one.
+
+The diff:
+${ESCAPED_DIFF}
+
+Rules:
+- Add concise bullet points describing the changes
+- Focus on user-facing changes and bug fixes
+- Use format: - **Feature/Fix name** — Brief description
+- Do not create a new <Update> section, append to the existing one"
+          else
+            PROMPT="You are updating the RADR changelog. A ${BUMP_TYPE} version bump to ${NEXT_VERSION} has occurred.
+
+Analyze this diff and create a NEW <Update> section at the TOP of the changelog content (after the frontmatter and intro paragraph) in ${CHANGELOG_PATH}.
+
+The diff:
+${ESCAPED_DIFF}
+
+Rules:
+- Create a new <Update label=\"Version ${NEXT_VERSION}\" description=\"Brief description\"> section
+- Add a ## heading describing the main theme of this release
+- Add bullet points for changes: - **Feature/Fix name** — Brief description
+- Place the new <Update> section BEFORE any existing <Update> sections
+- Keep it concise but informative"
+          fi
+          
+          agent --print --model claude-sonnet --force --workspace "$(pwd)" "$PROMPT" || echo "Changelog update skipped"
+
       - name: Upload firmware to Supabase master/
         if: ${{ steps.bot_check.outputs.is_bot != 'true' && steps.check_changes.outputs.skip != 'true' }}
         run: |
