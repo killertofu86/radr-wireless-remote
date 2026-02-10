@@ -125,40 +125,29 @@ jobs:
           CHANGELOG_PATH="Documentation/radr/guides/changelog/overview.mdx"
           
           # Get the diff of changes (excluding version files and markdown)
-          DIFF=$(git diff HEAD~1 HEAD --unified=3 -- . ':!**/Version.h' ':!**/version.json' ':!*.md' || echo "No diff available")
+          git diff HEAD~1 HEAD --unified=3 -- . ':!**/Version.h' ':!**/version.json' ':!*.md' > /tmp/changes.diff || echo "No diff available" > /tmp/changes.diff
           
-          # Escape the diff for shell
-          ESCAPED_DIFF=$(printf '%s' "$DIFF" | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
-          
+          # Build the prompt using heredoc
           if [[ "$BUMP_TYPE" == "patch" ]]; then
-            PROMPT="You are updating the RADR changelog. A patch version bump to ${NEXT_VERSION} has occurred. 
-
-Analyze this diff and append patch notes to the MOST RECENT <Update> section in ${CHANGELOG_PATH}. Do NOT create a new <Update> section - add bullet points to the existing one.
-
-The diff:
-${ESCAPED_DIFF}
-
-Rules:
-- Add concise bullet points describing the changes
-- Focus on user-facing changes and bug fixes
-- Use format: - **Feature/Fix name** — Brief description
-- Do not create a new <Update> section, append to the existing one"
+            cat > /tmp/prompt.txt << 'PROMPT_END'
+          You are updating the RADR changelog. A patch version bump has occurred.
+          Analyze the diff file at /tmp/changes.diff and append patch notes to the MOST RECENT <Update> section in the changelog. Do NOT create a new <Update> section.
+          Rules: Add concise bullet points describing the changes. Focus on user-facing changes and bug fixes. Use format: **Feature/Fix name** — Brief description
+          PROMPT_END
           else
-            PROMPT="You are updating the RADR changelog. A ${BUMP_TYPE} version bump to ${NEXT_VERSION} has occurred.
-
-Analyze this diff and create a NEW <Update> section at the TOP of the changelog content (after the frontmatter and intro paragraph) in ${CHANGELOG_PATH}.
-
-The diff:
-${ESCAPED_DIFF}
-
-Rules:
-- Create a new <Update label=\"Version ${NEXT_VERSION}\" description=\"Brief description\"> section
-- Add a ## heading describing the main theme of this release
-- Add bullet points for changes: - **Feature/Fix name** — Brief description
-- Place the new <Update> section BEFORE any existing <Update> sections
-- Keep it concise but informative"
+            cat > /tmp/prompt.txt << 'PROMPT_END'
+          You are updating the RADR changelog. A major or minor version bump has occurred.
+          Analyze the diff file at /tmp/changes.diff and create a NEW <Update> section at the TOP of the changelog content (after the frontmatter and intro paragraph).
+          Rules: Create a new <Update label="Version X.Y.Z" description="Brief description"> section. Add a ## heading describing the main theme. Add bullet points for changes. Place the new <Update> section BEFORE any existing <Update> sections.
+          PROMPT_END
           fi
           
+          # Add version and path info
+          echo "Version: ${NEXT_VERSION}" >> /tmp/prompt.txt
+          echo "Changelog file: ${CHANGELOG_PATH}" >> /tmp/prompt.txt
+          echo "Diff file: /tmp/changes.diff" >> /tmp/prompt.txt
+          
+          PROMPT=$(cat /tmp/prompt.txt)
           agent --print --model claude-sonnet --force --workspace "$(pwd)" "$PROMPT" || echo "Changelog update skipped"
 
       - name: Upload firmware to Supabase master/
