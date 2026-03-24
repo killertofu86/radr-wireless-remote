@@ -37,7 +37,11 @@ struct ossm_remote_state {
             "main_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::SETTINGS)] = "settings_menu"_s,
             "main_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::DEEP_SLEEP)] = "deep_sleep"_s,
             "main_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::RESTART)] = "restart"_s,
+            "main_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::OSSM_HELP)] = "ossm_help"_s,
+            "main_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::OSSM_RESTART)] = "ossm_restart_confirm"_s,
+            "main_menu"_s + event<left_button_pressed>[isConnected<>] / start = "device_draw_control"_s,
             "main_menu"_s + event<connected_event> / start = "device_draw_control"_s,
+            "main_menu"_s + event<disconnected_event> / disconnect,
 
 
             "settings_menu"_s + on_entry<_> / drawSettingsMenu,
@@ -76,8 +80,7 @@ struct ossm_remote_state {
 
             "device_draw_control"_s + on_entry<_> / drawControl,
             "device_draw_control"_s + event<right_button_pressed>[hasDeviceMenu<>] = "device_menu"_s,
-            // TODO: Left Menu button needs a menu behind it, this is disabled and only a placeholder for now.
-            "device_draw_control"_s + event<left_button_pressed>[hasDeviceSettingsMenu<>] = "device_menu"_s,
+            "device_draw_control"_s + event<left_button_pressed>[isPaused<>] = "main_menu"_s,
             "device_draw_control"_s + event<middle_button_pressed> / softPause,
             "device_draw_control"_s + event<middle_button_second_press> / stop = "device_stop"_s,
             "device_draw_control"_s + event<disconnected_event> / disconnect = "main_menu"_s,
@@ -94,6 +97,22 @@ struct ossm_remote_state {
             "device_stop"_s + event<left_button_pressed> / start = "device_draw_control"_s,
             "device_stop"_s + event<middle_button_pressed> / start = "device_draw_control"_s,
             "device_stop"_s + event<disconnected_event> / disconnect = "main_menu"_s,
+
+            // OSSM Help
+            "ossm_help"_s + on_entry<_> / drawPage(ossmHelpPage),
+            "ossm_help"_s + event<left_button_pressed> = "main_menu"_s,
+            "ossm_help"_s + event<right_button_pressed> = "main_menu"_s,
+            "ossm_help"_s + event<disconnected_event> / disconnect = "main_menu"_s,
+
+            // OSSM Restart
+            "ossm_restart_confirm"_s + on_entry<_> / drawPage(ossmRestartConfirmPage),
+            "ossm_restart_confirm"_s + event<left_button_pressed> = "main_menu"_s,
+            "ossm_restart_confirm"_s + event<right_button_pressed> / sendOssmRestart = "ossm_restarting"_s,
+            "ossm_restart_confirm"_s + event<disconnected_event> / disconnect = "main_menu"_s,
+
+            "ossm_restarting"_s + on_entry<_> / drawPage(ossmRestartingPage),
+            "ossm_restarting"_s + event<disconnected_event> / disconnect = "main_menu"_s,
+            "ossm_restarting"_s + event<left_button_pressed> / disconnect = "main_menu"_s,
 
             "restart"_s + on_entry<_> / espRestart,
             "restart"_s = X,

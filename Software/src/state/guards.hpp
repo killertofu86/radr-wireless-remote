@@ -54,3 +54,13 @@ template <typename Event = left_button_pressed>
 auto hasDeviceSettingsMenu = [](const Event &event) -> bool {
     return device != nullptr && device->settingsMenu.size() > 0;
 };
+
+template <typename Event = left_button_pressed>
+auto isPaused = [](const Event &event) -> bool {
+    return device != nullptr && device->isPaused;
+};
+
+template <typename Event = left_button_pressed>
+auto isConnected = [](const Event &event) -> bool {
+    return device != nullptr && device->isConnected;
+};

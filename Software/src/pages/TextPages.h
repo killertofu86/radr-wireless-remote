@@ -65,4 +65,29 @@ static const TextPage wifiConnectedPage = {
     .description = WIFI_CONNECTED_DESCRIPTION,
     .leftButtonText = GO_BACK};
 
+// OSSM Menu Pages
+
+static const TextPage ossmHelpPage = {
+    .title = "OSSM Help",
+    .description =
+        "Visit research-and-desire.com/ossm for guides, troubleshooting, and "
+        "firmware updates.",
+    .qrValue = "https://research-and-desire.com/ossm",
+    .leftButtonText = GO_BACK,
+};
+
+static const TextPage ossmRestartConfirmPage = {
+    .title = "Restart OSSM?",
+    .description =
+        "This will restart your OSSM device. The remote will stay on but "
+        "disconnect.",
+    .leftButtonText = CANCEL_STRING,
+    .rightButtonText = "Restart",
+};
+
+static const TextPage ossmRestartingPage = {
+    .title = "Restarting OSSM",
+    .description = "Your OSSM is restarting. Please wait...",
+};
+
 #endif  // TEXT_PAGES_H

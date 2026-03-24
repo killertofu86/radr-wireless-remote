@@ -286,11 +286,10 @@ class OSSM : public Device {
             pauseStopButton->setColors(Colors::red, Colors::white);
         }
 
-        // TODO: Uncomment this when functionality is added for OSSM Device Menu
         // Enable menu button when paused
-        // if (menuButton) {
-        //     menuButton->setColors(Colors::textBackground, Colors::black);
-        // }
+        if (menuButton) {
+            menuButton->setColors(Colors::textBackground, Colors::black);
+        }
 
         // Set middle LED to red to indicate STOP state
         setMiddleLed(Colors::red, 255);
@@ -362,9 +361,18 @@ class OSSM : public Device {
         }
     }
 
+    void onRestart() override {
+        // OSSM must be in menu.idle for go:restart to work.
+        // Send go:menu first, wait, then go:restart.
+        send("command", "go:menu");
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+        send("command", "go:restart");
+    }
+
     void onDeviceMenuItemSelected(int index) override { setPattern(index); }
 
     void drawDeviceMenu() override {
+        tabBarHeight = 0;
         activeMenu = &menu;
         activeMenuCount = menu.size();
 

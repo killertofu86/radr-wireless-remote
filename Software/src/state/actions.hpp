@@ -176,13 +176,29 @@ namespace actions {
         releaseAllIndividualLeds();
         setLed(LEDColors::idle, 50,
                1500);  // Soft white idle (Blends with backlight bleed)
-        activeMenu = &mainMenu;
-        activeMenuCount = numMainMenu;
+
+        // Default tab: OSSM if connected, RADR otherwise
+        if (device != nullptr && device->isConnected) {
+            activeTab = 0;  // OSSM tab
+            activeMenu = &ossmMenu;
+            activeMenuCount = numOssmMenu;
+        } else {
+            activeTab = 1;  // RADR tab
+            activeMenu = &mainMenu;
+            activeMenuCount = numMainMenu;
+        }
+        currentOption = 0;
         clearPage();
-        drawMenu();
+        drawMenuWithTabs();
+    };
+
+    auto sendOssmRestart = []() {
+        if (device == nullptr) return;
+        device->onRestart();
     };
 
     auto drawSettingsMenu = []() {
+        tabBarHeight = 0;
         activeMenu = &settingsMenu;
         activeMenuCount = numSettingsMenu;
         clearPage();
