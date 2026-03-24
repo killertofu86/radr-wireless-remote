@@ -179,6 +179,7 @@ namespace actions {
 
         // Default tab: OSSM if connected, RADR otherwise
         if (device != nullptr && device->isConnected) {
+            device->onMenuOpen();  // OSSM → menu.idle
             activeTab = 0;  // OSSM tab
             activeMenu = &ossmMenu;
             activeMenuCount = numOssmMenu;

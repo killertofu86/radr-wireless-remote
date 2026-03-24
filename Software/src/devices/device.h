@@ -71,6 +71,7 @@ class Device : public NimBLEClientCallbacks {
     virtual void onDisconnect() {}
     virtual void onDeviceMenuItemSelected(int index) {}
     virtual void onRestart() {}
+    virtual void onMenuOpen() {}
 
     virtual void onRightEncoderChange(int value) {}
     virtual void onLeftEncoderChange(int value) {}

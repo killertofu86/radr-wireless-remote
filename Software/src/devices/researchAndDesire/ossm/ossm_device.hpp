@@ -361,11 +361,11 @@ class OSSM : public Device {
         }
     }
 
-    void onRestart() override {
-        // OSSM must be in menu.idle for go:restart to work.
-        // Send go:menu first, wait, then go:restart.
+    void onMenuOpen() override {
         send("command", "go:menu");
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+    }
+
+    void onRestart() override {
         send("command", "go:restart");
     }
 
