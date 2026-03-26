@@ -35,6 +35,9 @@ void connectToDiscoveredDevice(int index);
 void startScanWithTimeout(int timeoutMs, void (*onComplete)());
 void onScanComplete();
 
+// Defined in remote.cpp — breaks circular dependency with stateMachine type
+void fireStateMachineDoneEvent();
+
 namespace actions {
 
     auto clearPage = [](bool clearStatusbar = false) {
@@ -64,7 +67,7 @@ namespace actions {
         }
     };
 
-    auto disconnect = []() {
+    auto disconnectImpl = [](bool quiet) {
         // Safety-critical: Ensure left encoder monitoring is stopped if the
         // device needs it
         if (device != nullptr &&
@@ -80,9 +83,13 @@ namespace actions {
         // and then stop scanning.
         NimBLEScan *pScan = NimBLEDevice::getScan();
         pScan->stop();
-        playBuzzerPattern(BuzzerPattern::DEVICE_DISCONNECTED);
-        setLed(LEDColors::logoBlue, 255, 1500);
+        if (!quiet) {
+            playBuzzerPattern(BuzzerPattern::DEVICE_DISCONNECTED);
+            setLed(LEDColors::logoBlue, 255, 1500);
+        }
     };
+
+    auto disconnect = []() { disconnectImpl(false); };
 
     auto drawPage = [](const TextPage &page) {
         // Capture reference to static const object - safe since it lives in
@@ -196,6 +203,32 @@ namespace actions {
     auto sendOssmRestart = []() {
         if (device == nullptr) return;
         device->onRestart();
+    };
+
+    // Quiet disconnect: cleanup without buzzer/LED (used during expected
+    // restart flow where we don't want to alarm the user)
+    auto disconnectQuiet = []() { disconnectImpl(true); };
+
+    inline TimerHandle_t ossmRestartTimer = nullptr;
+
+    auto startOssmRestartWait = []() {
+        if (ossmRestartTimer != nullptr) {
+            xTimerDelete(ossmRestartTimer, 0);
+        }
+        ossmRestartTimer = xTimerCreate(
+            "ossmRestart", pdMS_TO_TICKS(6500), pdFALSE, nullptr,
+            [](TimerHandle_t) {
+                ossmRestartTimer = nullptr;
+                fireStateMachineDoneEvent();
+            });
+        xTimerStart(ossmRestartTimer, 0);
+    };
+
+    auto cancelOssmRestartWait = []() {
+        if (ossmRestartTimer != nullptr) {
+            xTimerDelete(ossmRestartTimer, 0);
+            ossmRestartTimer = nullptr;
+        }
     };
 
     auto sendStrokeEngine = []() {

@@ -133,9 +133,11 @@ struct ossm_remote_state {
             "ossm_restart_confirm"_s + event<right_button_pressed> / sendOssmRestart = "ossm_restarting"_s,
             "ossm_restart_confirm"_s + event<disconnected_event> / disconnect = "main_menu"_s,
 
-            "ossm_restarting"_s + on_entry<_> / drawPage(ossmRestartingPage),
-            "ossm_restarting"_s + event<disconnected_event> / disconnect = "main_menu"_s,
+            "ossm_restarting"_s + on_entry<_> / (drawPage(ossmRestartingPage), startOssmRestartWait),
+            "ossm_restarting"_s + event<disconnected_event> / disconnectQuiet,
+            "ossm_restarting"_s + event<done> / disconnectQuiet = "device_search"_s,
             "ossm_restarting"_s + event<left_button_pressed> / disconnect = "main_menu"_s,
+            "ossm_restarting"_s + boost::sml::on_exit<_> / cancelOssmRestartWait,
 
             "restart"_s + on_entry<_> / espRestart,
             "restart"_s = X,

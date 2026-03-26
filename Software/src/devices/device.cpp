@@ -70,6 +70,9 @@ void Device::connectionTask(void *pvParameter) {
             pClient =
                 NimBLEDevice::getClientByPeerAddress(advDevice->getAddress());
             if (pClient) {
+                // Re-register callbacks — previous Device destructor cleared
+                // them, so the reused client has no callbacks set.
+                pClient->setClientCallbacks(device, false);
                 updateStatusText("Attempting fast reconnect...");
                 ESP_LOGD(TAG,
                          "Found existing client for peer: %s; attempting fast "
