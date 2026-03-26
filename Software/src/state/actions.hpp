@@ -25,6 +25,7 @@
 #include "pages/TextPages.h"
 #include "pages/controller.h"
 #include "pages/menus.h"
+#include "pages/pairing.h"
 #include "services/leftEncoderMonitor.h"
 
 // Forward declarations to avoid circular dependencies
@@ -324,5 +325,7 @@ namespace actions {
         // conflicts The restart will clean up everything properly
         espSilentRestart();
     };
+
+    auto checkOssmPairing = []() { startOssmPairingCheck(); };
 
 }  // namespace actions

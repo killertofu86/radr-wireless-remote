@@ -12,6 +12,39 @@
 
 #include "displayUtils.h"
 
+// OSSM page definitions (extern-declared in TextPages.h to avoid 11x static
+// duplication across translation units)
+const TextPage ossmHelpPage = {
+    .title = "OSSM Help",
+    .description =
+        "Visit research-and-desire.com/ossm for guides, troubleshooting, and "
+        "firmware updates.",
+    .qrValue = "https://research-and-desire.com/ossm",
+    .leftButtonText = GO_BACK,
+};
+
+const TextPage ossmRestartConfirmPage = {
+    .title = "Restart OSSM?",
+    .description =
+        "This will restart your OSSM device. The remote will stay on but "
+        "disconnect.",
+    .leftButtonText = CANCEL_STRING,
+    .rightButtonText = "Restart",
+};
+
+const TextPage ossmRestartingPage = {
+    .title = "Restarting OSSM",
+    .description = "Your OSSM is restarting. Please wait...",
+};
+
+const TextPage streamingPage = {
+    .title = "Streaming Active",
+    .description =
+        "Your OSSM is in streaming mode. Position commands are being received "
+        "from an external source.",
+    .leftButtonText = "Menu",
+};
+
 void drawPageTask(void *pvParameters) {
     TextPage *params = static_cast<TextPage *>(pvParameters);
 

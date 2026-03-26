@@ -44,6 +44,8 @@ struct ossm_remote_state {
             "main_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::OSSM_STREAMING)] / sendStreaming = "streaming_screen"_s,
             "main_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::OSSM_HELP)] = "ossm_help"_s,
             "main_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::OSSM_RESTART)] = "ossm_restart_confirm"_s,
+            "main_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::OSSM_PAIRING) && isOnline<>] = "ossm_pairing"_s,
+            "main_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::OSSM_PAIRING)] = "ossm_pairing_wifi"_s,
             "main_menu"_s + event<left_button_pressed>[isConnected<> && isSimplePenetrationMode<>] / start = "simple_penetration_control"_s,
             "main_menu"_s + event<left_button_pressed>[isConnected<>] / start = "device_draw_control"_s,
             "main_menu"_s + event<connected_event> / start = "device_draw_control"_s,
@@ -140,6 +142,21 @@ struct ossm_remote_state {
             "ossm_restarting"_s + event<done> / disconnectQuiet = "device_search"_s,
             "ossm_restarting"_s + event<left_button_pressed> / disconnect = "main_menu"_s,
             "ossm_restarting"_s + boost::sml::on_exit<_> / cancelOssmRestartWait,
+
+            // OSSM Pairing
+            "ossm_pairing"_s + on_entry<_> / (drawPage(ossmPairingConnectingPage), checkOssmPairing),
+            "ossm_pairing"_s + event<done> = "ossm_pairing_success"_s,
+            "ossm_pairing"_s + event<left_button_pressed> = "main_menu"_s,
+            "ossm_pairing"_s + event<disconnected_event> / disconnect = "main_menu"_s,
+
+            "ossm_pairing_success"_s + on_entry<_> / drawPage(ossmPairingSuccessPage),
+            "ossm_pairing_success"_s + event<left_button_pressed> = "main_menu"_s,
+            "ossm_pairing_success"_s + event<right_button_pressed> = "main_menu"_s,
+            "ossm_pairing_success"_s + event<disconnected_event> / disconnect = "main_menu"_s,
+
+            "ossm_pairing_wifi"_s + on_entry<_> / drawPage(ossmPairingWifiPage),
+            "ossm_pairing_wifi"_s + event<left_button_pressed> = "main_menu"_s,
+            "ossm_pairing_wifi"_s + event<disconnected_event> / disconnect = "main_menu"_s,
 
             "restart"_s + on_entry<_> / espRestart,
             "restart"_s = X,

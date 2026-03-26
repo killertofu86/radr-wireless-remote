@@ -65,35 +65,15 @@ static const TextPage wifiConnectedPage = {
     .description = WIFI_CONNECTED_DESCRIPTION,
     .leftButtonText = GO_BACK};
 
-// OSSM Menu Pages
+// OSSM Pages (defined in genericPages.cpp — extern to avoid 11x static duplication)
+extern const TextPage ossmHelpPage;
+extern const TextPage ossmRestartConfirmPage;
+extern const TextPage ossmRestartingPage;
+extern const TextPage streamingPage;
 
-static const TextPage ossmHelpPage = {
-    .title = "OSSM Help",
-    .description =
-        "Visit research-and-desire.com/ossm for guides, troubleshooting, and "
-        "firmware updates.",
-    .qrValue = "https://research-and-desire.com/ossm", // TODO: put the correct URL here and make sure the QR code is generated correctly for it and make sure it's not overflowing the QR code's capacity,
-    .leftButtonText = GO_BACK,
-};
-
-static const TextPage ossmRestartConfirmPage = {
-    .title = "Restart OSSM?",
-    .description =
-        "This will restart your OSSM device. The remote will stay on but "
-        "disconnect.",
-    .leftButtonText = CANCEL_STRING,
-    .rightButtonText = "Restart",
-};
-
-static const TextPage ossmRestartingPage = {
-    .title = "Restarting OSSM",
-    .description = "Your OSSM is restarting. Please wait...",
-};
-
-static const TextPage streamingPage = {
-    .title = "Streaming Active",
-    .description = "Your OSSM is in streaming mode. Position commands are being received from an external source.",
-    .leftButtonText = "Menu",
-};
+// OSSM Pairing Pages (defined in pairing.cpp)
+extern const TextPage ossmPairingConnectingPage;
+extern const TextPage ossmPairingSuccessPage;
+extern const TextPage ossmPairingWifiPage;
 
 #endif  // TEXT_PAGES_H
