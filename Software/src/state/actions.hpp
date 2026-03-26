@@ -209,14 +209,14 @@ namespace actions {
     // restart flow where we don't want to alarm the user)
     auto disconnectQuiet = []() { disconnectImpl(true); };
 
-    inline TimerHandle_t ossmRestartTimer = nullptr;
+    static TimerHandle_t ossmRestartTimer = nullptr;
 
     auto startOssmRestartWait = []() {
         if (ossmRestartTimer != nullptr) {
             xTimerDelete(ossmRestartTimer, 0);
         }
         ossmRestartTimer = xTimerCreate(
-            "ossmRestart", pdMS_TO_TICKS(6500), pdFALSE, nullptr,
+            "ossmRestart", pdMS_TO_TICKS(8500), pdFALSE, nullptr,
             [](TimerHandle_t) {
                 ossmRestartTimer = nullptr;
                 fireStateMachineDoneEvent();

@@ -2,6 +2,7 @@
 
 #include <Fonts/FreeSans9pt7b.h>
 #include <components/DynamicText.h>
+#include <components/TextButton.h>
 #include <devices/device.h>
 #include <pins.h>
 #include <services/encoder.h>
@@ -543,7 +544,14 @@ void drawDeviceListMenu() {
     
     clearPage();
     vTaskDelay(10 / portTICK_PERIOD_MS);
-    
+
+    // Draw button labels
+    const int16_t buttonY = Display::HEIGHT - 30;
+    TextButton selectButton(SELECT_STRING, pins::BTN_UNDER_R, Display::WIDTH - 90, buttonY);
+    selectButton.tick();
+    TextButton retryButton(RETRY_STRING, pins::BTN_UNDER_C, (Display::WIDTH - 70) / 2, buttonY);
+    retryButton.tick();
+
     xTaskCreatePinnedToCore(drawDeviceListTask, "drawDeviceListTask",
                             5 * configMINIMAL_STACK_SIZE, NULL, 5,
                             &deviceListTaskHandle, 1);

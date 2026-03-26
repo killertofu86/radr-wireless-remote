@@ -25,6 +25,8 @@ struct ossm_remote_state {
 
             "device_list"_s + on_entry<_> / drawDeviceList,
             "device_list"_s + event<right_button_pressed> / selectDevice = "device_connecting"_s,
+            "device_list"_s + event<middle_button_pressed> / clearDeviceList = "device_search"_s,
+            "device_list"_s + event<middle_button_second_press> / clearDeviceList = "device_search"_s,
             "device_list"_s + event<left_button_pressed> / (disconnect, clearDeviceList) = "main_menu"_s,
 
             "device_connecting"_s + on_entry<_> / drawPage(deviceConnectingPage),
