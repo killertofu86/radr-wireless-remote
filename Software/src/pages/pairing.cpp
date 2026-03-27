@@ -64,7 +64,16 @@ static void drawPairingCodeScreen(const String &pairingCode) {
         return;
     }
 
-    clearPage();
+    // Clear page area inline (clearPage() can't be used here because it
+    // tries to re-acquire displayMutex which we already hold, and it's
+    // non-recursive — so clearPage() silently skips the clear).
+    tft.fillRect(0, Display::PageY, Display::WIDTH, Display::PageHeight,
+                 Colors::black);
+    int cornerWidth =
+        (Display::WIDTH / 2) - (Display::StatusbarWidth / 2);
+    tft.fillRect(0, 0, cornerWidth, Display::StatusbarHeight, Colors::black);
+    tft.fillRect(Display::WIDTH - cornerWidth, 0, cornerWidth,
+                 Display::StatusbarHeight, Colors::black);
 
     // Title
     tft.setFont(&FreeSansBold12pt7b);
