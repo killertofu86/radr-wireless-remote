@@ -16,10 +16,8 @@
 // duplication across translation units)
 const TextPage ossmHelpPage = {
     .title = "OSSM Help",
-    .description =
-        "Visit research-and-desire.com/ossm for guides, troubleshooting, and "
-        "firmware updates.",
-    .qrValue = "https://research-and-desire.com/ossm",
+    .description = "Scan for guides\nand troubleshooting",
+    .qrValue = "HTTPS://DOCS.RESEARCHANDDESIRE.COM/OSSM",
     .leftButtonText = GO_BACK,
 };
 
