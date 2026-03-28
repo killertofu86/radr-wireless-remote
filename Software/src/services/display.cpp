@@ -63,3 +63,22 @@ void turnOffScreen()
 {
     setScreenBrightness(BRIGHTNESS_OFF);
 }
+
+void drawImage(const uint16_t* imageData, uint16_t width, uint16_t height) 
+{
+    const uint8_t LINES_PER_CHUNK = 1;
+    uint16_t buffer[320 * 1];
+    
+    int xOffset = (320 - (int)width) / 2;
+    int yOffset = (240 - (int)height) / 2;
+
+    for (uint16_t row = 0; row < height; row += LINES_PER_CHUNK) {
+        uint16_t lines =
+            (row + LINES_PER_CHUNK > height) ? (height - row) : LINES_PER_CHUNK;
+       
+        memcpy_P(buffer, &imageData[row * width],
+                 width * lines * sizeof(uint16_t));
+
+        tft.drawRGBBitmap(xOffset, yOffset + row, buffer, width, lines);
+    }
+}
