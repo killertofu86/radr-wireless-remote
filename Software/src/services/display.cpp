@@ -67,7 +67,7 @@ void turnOffScreen()
 void drawImage(const uint16_t* imageData, uint16_t width, uint16_t height) 
 {
     const uint8_t LINES_PER_CHUNK = 1;
-    uint16_t buffer[320 * 1];
+    uint16_t buffer[width * 1];
     
     int xOffset = (320 - (int)width) / 2;
     int yOffset = (240 - (int)height) / 2;
