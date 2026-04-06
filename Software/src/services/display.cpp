@@ -12,8 +12,8 @@ static const char* TAG = "DISPLAY";
 // NOTE: Do not reuse channel 7 elsewhere; allocate new LEDC channels only
 // after checking and updating this documented mapping.
 static const int BACKLIGHT_PWM_CHANNEL = 7;
-static const int BACKLIGHT_PWM_FREQ = 5000;      // 5kHz - high enough to avoid flicker
-static const int BACKLIGHT_PWM_RESOLUTION = 8;   // 8-bit resolution (0-255)
+static const int BACKLIGHT_PWM_FREQ =  5000; // 5kHz - high enough to avoid flicker
+static const int BACKLIGHT_PWM_RESOLUTION = 8; // 8-bit resolution (0-255)
 
 // Track current brightness for restore functionality
 static uint8_t currentBrightness = BRIGHTNESS_FULL;
@@ -68,24 +68,12 @@ void turnOffScreen()
 void drawImage(const uint16_t* imageData, uint16_t width, uint16_t height) {
     const uint8_t LINES_PER_CHUNK = 4;
     const uint16_t BUFFER_SIZE = width * LINES_PER_CHUNK;
-    std::vector<uint16_t>* buffer =
-        new (std::nothrow) std::vector<uint16_t>(BUFFER_SIZE);
-    if (!buffer) {
-        ESP_LOGE(TAG, "Failed to allocate memory for buffer");
-        return;
-    }
+    std::vector<uint16_t> buffer(BUFFER_SIZE);
     for (uint16_t row = 0; row < height; row += LINES_PER_CHUNK) {
-        uint16_t lines =
-            (row + LINES_PER_CHUNK > height) ? (height - row) : LINES_PER_CHUNK;
-
+        uint16_t lines = (row + LINES_PER_CHUNK > height) ? (height - row) : LINES_PER_CHUNK;
         const int xOffset = (320 - (int)width) / 2;
         const int yOffset = (240 - (int)height) / 2;
-
-        memcpy_P(buffer->data(), &imageData[row * width],
-                 BUFFER_SIZE * sizeof(uint16_t));
-
-        tft.drawRGBBitmap(xOffset, row + yOffset, buffer->data(), width, lines);
+        memcpy_P(buffer.data(), &imageData[row * width], BUFFER_SIZE * sizeof(uint16_t));
+        tft.drawRGBBitmap(xOffset, row + yOffset, buffer.data(), width, lines);
     }
-
-    delete buffer;
 }
