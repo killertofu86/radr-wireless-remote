@@ -65,21 +65,27 @@ void turnOffScreen()
     setScreenBrightness(BRIGHTNESS_OFF);
 }
 
-void drawImage(const uint16_t* imageData, uint16_t width, uint16_t height) 
-{
-    const uint8_t LINES_PER_CHUNK = 1;
-    std::vector<uint16_t> buffer(width * i);
-    
-    int xOffset = (320 - (int)width) / 2;
-    int yOffset = (240 - (int)height) / 2;
-
+void drawImage(const uint16_t* imageData, uint16_t width, uint16_t height) {
+    const uint8_t LINES_PER_CHUNK = 4;
+    const uint16_t BUFFER_SIZE = width * LINES_PER_CHUNK;
+    std::vector<uint16_t>* buffer =
+        new (std::nothrow) std::vector<uint16_t>(BUFFER_SIZE);
+    if (!buffer) {
+        ESP_LOGE(TAG, "Failed to allocate memory for buffer");
+        return;
+    }
     for (uint16_t row = 0; row < height; row += LINES_PER_CHUNK) {
         uint16_t lines =
             (row + LINES_PER_CHUNK > height) ? (height - row) : LINES_PER_CHUNK;
-       
-        memcpy_P(buffer, &imageData[row * width],
-                 width * lines * sizeof(uint16_t));
 
-        tft.drawRGBBitmap(xOffset, yOffset + row, buffer, width, lines);
+        const int xOffset = (320 - (int)width) / 2;
+        const int yOffset = (240 - (int)height) / 2;
+
+        memcpy_P(buffer->data(), &imageData[row * width],
+                 BUFFER_SIZE * sizeof(uint16_t));
+
+        tft.drawRGBBitmap(xOffset, row + yOffset, buffer->data(), width, lines);
     }
+
+    delete buffer;
 }
