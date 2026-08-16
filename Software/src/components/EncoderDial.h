@@ -8,6 +8,7 @@
 #include <map>
 
 #include "DisplayObject.h"
+#include "constants/Sizes.h"
 #include "esp_log.h"
 #include "pins.h"
 #include "services/buzzer.h"

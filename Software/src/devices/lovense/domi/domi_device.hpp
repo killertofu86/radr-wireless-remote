@@ -72,7 +72,7 @@ class Domi2 : public Device {
 
     void onLeftEncoderChange(int value) override { setVibrate(value); }
 
-    void onPause(bool fullStop = false) override {
+    void onPause() override {
         setVibrate(0);
         vTaskDelay(250 / portTICK_PERIOD_MS);
         setVibrate(0);

@@ -8,16 +8,13 @@
 #include <components/EncoderDial.h>
 #include <components/LinearRailGraph.h>
 #include <components/TextButton.h>
+#include <esp_wifi.h>
 #include <pages/menus.h>
 #include <services/leds.h>
 #include <structs/SettingPercents.h>
 
-#include <esp_wifi.h>
-
 #include "../../device.h"
 #include "state/remote.h"
-// Forward declaration for button counter reset function
-extern void resetMiddleButtonCounter();
 
 #define OSSM_CHARACTERISTIC_UUID_COMMAND "522B443A-4F53-534D-1000-420BADBABE69"
 #define OSSM_CHARACTERISTIC_UUID_SET_SPEED_KNOB_LIMIT \
@@ -260,7 +257,8 @@ class OSSM : public Device {
         } else {
             send("command", "go:strokeEngine");
             vTaskDelay(pdMS_TO_TICKS(250));
-            // TODO: A bug on AJ's dev unit requires two "go:strokeEngine" commands.
+            // TODO: A bug on AJ's dev unit requires two "go:strokeEngine"
+            // commands.
             send("command", "go:strokeEngine");
         }
         vTaskDelay(pdMS_TO_TICKS(250));
@@ -271,7 +269,7 @@ class OSSM : public Device {
         shareWiFiCredentials();
     }
 
-    void onPause(bool fullStop = false) override {
+    void onPause() override {
         playBuzzerPattern(BuzzerPattern::PAUSED);
         isPaused = true;
         setSpeed(0);
@@ -282,13 +280,6 @@ class OSSM : public Device {
         // Guard: Only update UI elements if displayObjects hasn't been cleared
         // This prevents crashes from race conditions during state transitions
         if (displayObjects.empty()) {
-            // UI has been torn down, skip UI updates
-            if (fullStop) {
-                setDepth(0);
-                setStroke(10);
-                setSensation(50);
-                rightEncoder.setEncoderValue(0);
-            }
             return;
         }
 
@@ -299,8 +290,8 @@ class OSSM : public Device {
 
         // Change pause button to red STOP button
         if (pauseStopButton) {
-            pauseStopButton->setText("STOP");
-            pauseStopButton->setColors(Colors::red, Colors::white);
+            pauseStopButton->setText("Resume");
+            pauseStopButton->setColors(Colors::green, Colors::white);
         }
 
         // Enable menu button when paused
@@ -310,24 +301,11 @@ class OSSM : public Device {
 
         // Set middle LED to red to indicate STOP state
         setMiddleLed(Colors::red, 255);
-
-        // Reset all play parameters to defaults, state will also be changed
-        if (fullStop) {
-            setDepth(0);
-            setStroke(10);
-            setSensation(50);
-            rightEncoder.setEncoderValue(0);
-
-            // TODO: Anything else for consideration in full stop before
-            // swapping state?
-        }
     }
 
     void onResume() override {
-        // playBuzzerPattern(BuzzerPattern::PLAY);
         leftEncoder.setBoundaries(0, 100);
         isPaused = false;
-        resetMiddleButtonCounter();
         setMiddleLed(Colors::white, 50);
 
         // Guard: Only update UI elements if displayObjects hasn't been cleared
@@ -378,17 +356,11 @@ class OSSM : public Device {
         }
     }
 
-    void onMenuOpen() override {
-        send("command", "go:menu");
-    }
+    void onMenuOpen() override { send("command", "go:menu"); }
 
-    void onRestart() override {
-        send("command", "go:restart");
-    }
+    void onRestart() override { send("command", "go:restart"); }
 
-    void onUpdate() override {
-        send("command", "go:update");
-    }
+    void onUpdate() override { send("command", "go:update"); }
 
     void enterStrokeEngineMode() override {
         operationMode = OssmMode::StrokeEngine;
@@ -400,9 +372,7 @@ class OSSM : public Device {
         send("command", "go:simplePenetration");
     }
 
-    void enterStreamingMode() override {
-        send("command", "go:streaming");
-    }
+    void enterStreamingMode() override { send("command", "go:streaming"); }
 
     bool isInSimplePenetrationMode() const override {
         return operationMode == OssmMode::SimplePenetration;
@@ -571,7 +541,8 @@ class OSSM : public Device {
     void shareWiFiCredentials() {
         if (WiFi.status() != WL_CONNECTED) return;
 
-        // Read OSSM's pairing characteristic: "MAC;chip;wifiConnected;md5;version"
+        // Read OSSM's pairing characteristic:
+        // "MAC;chip;wifiConnected;md5;version"
         std::string pairingInfo = readString("pairing");
         if (pairingInfo.empty()) {
             ESP_LOGW(TAG, "Could not read pairing characteristic");
@@ -588,7 +559,9 @@ class OSSM : public Device {
                     fieldStart = i + 1;
                 } else if (semicolonCount == 3) {
                     if (pairingInfo.substr(fieldStart, i - fieldStart) == "1") {
-                        ESP_LOGI(TAG, "OSSM already has WiFi, skipping credential share");
+                        ESP_LOGI(
+                            TAG,
+                            "OSSM already has WiFi, skipping credential share");
                         return;
                     }
                     break;
@@ -602,13 +575,14 @@ class OSSM : public Device {
             ESP_LOGW(TAG, "Failed to get WiFi config");
             return;
         }
-        std::string ssid(reinterpret_cast<char*>(conf.sta.ssid));
-        std::string password(reinterpret_cast<char*>(conf.sta.password));
+        std::string ssid(reinterpret_cast<char *>(conf.sta.ssid));
+        std::string password(reinterpret_cast<char *>(conf.sta.password));
         if (ssid.empty()) return;
 
         // Write "9;SSID;PASSWORD" to pairing characteristic
         if (send("pairing", "9;" + ssid + ";" + password)) {
-            ESP_LOGI(TAG, "WiFi credentials shared with OSSM (SSID: %s)", ssid.c_str());
+            ESP_LOGI(TAG, "WiFi credentials shared with OSSM (SSID: %s)",
+                     ssid.c_str());
         } else {
             ESP_LOGW(TAG, "Failed to write WiFi credentials to OSSM");
         }
@@ -627,7 +601,8 @@ class OSSM : public Device {
         leftEncoder.setEncoderValue(0);
         rightEncoder.setEncoderValue(0);
 
-        // Bottom buttons — Menu (left, disabled until paused), Pause/Stop (center)
+        // Bottom buttons — Menu (left, disabled until paused), Pause/Stop
+        // (center)
         menuButton = draw<TextButton>("Menu", pins::BTN_UNDER_L, -5,
                                       Display::HEIGHT - 30, 90);
         pauseStopButton =
@@ -639,12 +614,15 @@ class OSSM : public Device {
             menuButton->setColors(Colors::disabled, Colors::black);
         }
 
-        // LinearRailGraph — stroke visualization (depth fixed at 100 for full range)
+        // LinearRailGraph — stroke visualization (depth fixed at 100 for full
+        // range)
         settings.depth = 100;
         draw<LinearRailGraph>(&this->settings.stroke, &this->settings.depth, -1,
-                              Display::PageHeight - 30, Display::WIDTH - 20, 20);
+                              Display::PageHeight - 30, Display::WIDTH - 20,
+                              20);
 
-        // Mode label (must use member variable — DynamicText stores a reference)
+        // Mode label (must use member variable — DynamicText stores a
+        // reference)
         patternName = "Simple Penetration";
         patternNameDisplay =
             draw<DynamicText>(this->patternName, -1, Display::HEIGHT - 70);
@@ -652,13 +630,13 @@ class OSSM : public Device {
         // Left encoder dial — Speed (purple)
         std::map<String, float *> leftParams = {
             {"Speed", &this->settings.speed}};
-        leftEncoderDial = draw<EncoderDial>(EncoderDial::Props{
-            .encoder = &leftEncoder,
-            .parameters = leftParams,
-            .focusedIndex = &this->leftFocusedIndex,
-            .x = 0 + 5,
-            .y = (int16_t)(Display::PageY + 35),
-            .mapToLeftLed = true});
+        leftEncoderDial = draw<EncoderDial>(
+            EncoderDial::Props{.encoder = &leftEncoder,
+                               .parameters = leftParams,
+                               .focusedIndex = &this->leftFocusedIndex,
+                               .x = 0 + 5,
+                               .y = (int16_t)(Display::PageY + 35),
+                               .mapToLeftLed = true});
 
         if (leftEncoderDial) {
             std::vector<uint16_t> leftColors = {Colors::speed};
@@ -669,13 +647,13 @@ class OSSM : public Device {
         rightFocusedIndex = 0;
         std::map<String, float *> rightParams = {
             {"Stroke", &this->settings.stroke}};
-        rightEncoderDial = draw<EncoderDial>(EncoderDial::Props{
-            .encoder = &rightEncoder,
-            .parameters = rightParams,
-            .focusedIndex = &this->rightFocusedIndex,
-            .x = (int16_t)(DISPLAY_WIDTH - 90 - 5),
-            .y = (int16_t)(Display::PageY + 35),
-            .mapToRightLed = true});
+        rightEncoderDial = draw<EncoderDial>(
+            EncoderDial::Props{.encoder = &rightEncoder,
+                               .parameters = rightParams,
+                               .focusedIndex = &this->rightFocusedIndex,
+                               .x = (int16_t)(DISPLAY_WIDTH - 90 - 5),
+                               .y = (int16_t)(Display::PageY + 35),
+                               .mapToRightLed = true});
 
         if (rightEncoderDial) {
             std::vector<uint16_t> rightColors = {Colors::stroke};

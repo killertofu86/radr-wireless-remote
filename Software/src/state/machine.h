@@ -26,7 +26,6 @@ struct ossm_remote_state {
             "device_list"_s + on_entry<_> / drawDeviceList,
             "device_list"_s + event<right_button_pressed> / selectDevice = "device_connecting"_s,
             "device_list"_s + event<middle_button_pressed> / clearDeviceList = "device_search"_s,
-            "device_list"_s + event<middle_button_second_press> / clearDeviceList = "device_search"_s,
             "device_list"_s + event<left_button_pressed> / (disconnect, clearDeviceList) = "main_menu"_s,
 
             "device_connecting"_s + on_entry<_> / drawPage(deviceConnectingPage),
@@ -48,8 +47,8 @@ struct ossm_remote_state {
             "main_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::OSSM_PAIRING)] = "ossm_pairing_wifi"_s,
             "main_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::OSSM_UPDATE) && isOnline<>] = "ossm_update_check"_s,
             "main_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::OSSM_UPDATE)] = "ossm_update_wifi"_s,
-            "main_menu"_s + event<left_button_pressed>[isConnected<> && isSimplePenetrationMode<>] / start = "simple_penetration_control"_s,
-            "main_menu"_s + event<left_button_pressed>[isConnected<>] / start = "device_draw_control"_s,
+            "main_menu"_s + event<left_button_pressed>[isConnected && isSimplePenetrationMode] / start = "simple_penetration_control"_s,
+            "main_menu"_s + event<left_button_pressed>[isConnected] / start = "device_draw_control"_s,
             "main_menu"_s + event<connected_event> / start = "device_draw_control"_s,
             "main_menu"_s + event<disconnected_event> / disconnect,
 
@@ -68,10 +67,10 @@ struct ossm_remote_state {
             "update"_s + event<done> [hasFilesystemUpdate<>] = "update.filesystem"_s,
             "update"_s + event<done> [hasSoftwareUpdate<>] = "update.software"_s,
             "update"_s + event<done> = "update.done"_s,
-            "update.filesystem"_s + on_entry<_> / (drawPage(updateFilesystemPage), startTask(updateTask, updateTaskName, updateTaskHandle)),
+            "update.filesystem"_s + on_entry<_> / (drawPage(updateFilesystemPage), startTask(updateFilesystemTask, updateFilesystemTaskName, updateFilesystemTaskHandle)),
             "update.filesystem"_s + event<done>[hasSoftwareUpdate<>] = "update.software"_s,
             "update.filesystem"_s + event<done> = "update.done"_s,
-            "update.software"_s + on_entry<_> / (drawPage(updateSoftwarePage), startTask(updateTask, updateTaskName, updateTaskHandle)),
+            "update.software"_s + on_entry<_> / (drawPage(updateSoftwarePage), startTask(updateSoftwareTask, updateSoftwareTaskName, updateSoftwareTaskHandle)),
             "update.software"_s + event<done> = "restart"_s,
             "update.done"_s + on_entry<_> / (drawPage(updateDonePage)),
             "update.done"_s + event<left_button_pressed> = "restart"_s,
@@ -90,16 +89,15 @@ struct ossm_remote_state {
 
             "device_draw_control"_s + on_entry<_> / drawControl,
             "device_draw_control"_s + event<right_button_pressed>[hasDeviceMenu<>] = "device_menu"_s,
-            "device_draw_control"_s + event<left_button_pressed>[isPaused<>] = "main_menu"_s,
-            "device_draw_control"_s + event<middle_button_pressed> / softPause,
-            "device_draw_control"_s + event<middle_button_second_press> / stop = "device_stop"_s,
+            "device_draw_control"_s + event<left_button_pressed>[isPaused] = "main_menu"_s,
+            "device_draw_control"_s + event<middle_button_pressed>[!isPaused] / softPause,
+            "device_draw_control"_s + event<middle_button_pressed> / resume,
+            "device_draw_control"_s + event<middle_button_long_pressed> / stop = "device_stop"_s,
             "device_draw_control"_s + event<disconnected_event> / disconnect = "main_menu"_s,
 
             "device_menu"_s + on_entry<_> / drawDeviceMenu,
             "device_menu"_s + event<left_button_pressed> = "device_draw_control"_s,
             "device_menu"_s + event<right_button_pressed> / onDeviceMenuItemSelected = "device_draw_control"_s,
-            "device_menu"_s + event<middle_button_second_press> / softPause = "device_draw_control"_s,
-            "device_menu"_s + event<middle_button_pressed> / softPause = "device_draw_control"_s,
             "device_menu"_s + event<disconnected_event> / disconnect = "main_menu"_s,
 
             "device_stop"_s + on_entry<_> / (drawPage(deviceStopPage), stop),
@@ -110,9 +108,9 @@ struct ossm_remote_state {
 
             // SimplePenetration Controller
             "simple_penetration_control"_s + on_entry<_> / drawControl,
-            "simple_penetration_control"_s + event<left_button_pressed>[isPaused<>] = "main_menu"_s,
-            "simple_penetration_control"_s + event<middle_button_pressed> / softPause,
-            "simple_penetration_control"_s + event<middle_button_second_press> / stop = "simple_penetration_stop"_s,
+            "simple_penetration_control"_s + event<left_button_pressed>[isPaused] = "main_menu"_s,
+            "simple_penetration_control"_s + event<middle_button_pressed>[!isPaused] / softPause,
+            "simple_penetration_control"_s + event<middle_button_pressed> / resume,
             "simple_penetration_control"_s + event<disconnected_event> / disconnect = "main_menu"_s,
 
             // SimplePenetration Stop (separate from device_stop so resume returns to correct state)

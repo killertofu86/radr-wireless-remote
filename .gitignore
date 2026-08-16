@@ -4,7 +4,7 @@
 .vscode/launch.json
 .vscode/ipch
 
-Documentation/node_modules/
 
 scratch
-Software/src/images/radr.h
+.github/scripts/__pycache__/
+*.pyc

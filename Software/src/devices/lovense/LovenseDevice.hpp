@@ -2,18 +2,17 @@
 #define LOVENSE_DEVICE_HPP
 
 #include <Arduino.h>
-#include <constants/Sizes.h>
 
 #include <components/EncoderDial.h>
 #include <components/LinearRailGraph.h>
 #include <components/TextButton.h>
+#include <constants/Sizes.h>
 #include <devices/device.h>
 
 #include "data.hpp"
 #include "devices/buttplugio/buttplugIOProtocol.hpp"
 #include "services/display.h"
 #include "services/encoder.h"
-
 
 class LovenseDevice : public Device, public ButtplugIoProtocol {
   public:
@@ -135,7 +134,7 @@ class LovenseDevice : public Device, public ButtplugIoProtocol {
 
     void onLeftEncoderChange(int value) override { setVibrate(value); }
 
-    void onPause(bool fullStop = false) override {
+    void onPause() override {
         setVibrate(0);
         vTaskDelay(250 / portTICK_PERIOD_MS);
         setVibrate(0);

@@ -50,23 +50,19 @@ template <typename Event = right_button_pressed>
 auto hasDeviceMenu = [](const Event &event) -> bool {
     return device != nullptr && device->menu.size() > 0;
 };
-template <typename Event = left_button_pressed>
-auto hasDeviceSettingsMenu = [](const Event &event) -> bool {
+const auto hasDeviceSettingsMenu = []() -> bool {
     return device != nullptr && device->settingsMenu.size() > 0;
 };
 
-template <typename Event = left_button_pressed>
-auto isPaused = [](const Event &event) -> bool {
+const auto isPaused = []() -> bool {
     return device != nullptr && device->isPaused;
 };
 
-template <typename Event = left_button_pressed>
-auto isConnected = [](const Event &event) -> bool {
+const auto isConnected = []() -> bool {
     return device != nullptr && device->isConnected;
 };
 
-template <typename Event = left_button_pressed>
-auto isSimplePenetrationMode = [](const Event &event) -> bool {
+const auto isSimplePenetrationMode = []() -> bool {
     return device != nullptr && device->isInSimplePenetrationMode();
 };
 

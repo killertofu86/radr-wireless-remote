@@ -51,14 +51,12 @@ void initRegistry() {
                     // Parse JSON and add UUIDs to registry
                     for (JsonPair pair : doc.as<JsonObject>()) {
                         std::string uuidStr = pair.key().c_str();
-                        ESP_LOGD(REGISTRY_TAG, "UUID: %s", uuidStr.c_str());
                         std::transform(uuidStr.begin(), uuidStr.end(),
                                        uuidStr.begin(), ::toupper);
-                        ESP_LOGD(REGISTRY_TAG, "Uppercase UUID: %s",
-                                 uuidStr.c_str());
+                        ESP_LOGD(REGISTRY_TAG, "UUID: %s", uuidStr.c_str());
 
                         registry.emplace(uuidStr, ButtplugIODeviceFactory);
-                        vTaskDelay(1);
+                        vTaskDelay(10);
                     }
                 } else {
                     ESP_LOGW(REGISTRY_TAG, "Failed to parse registry.json: %s",

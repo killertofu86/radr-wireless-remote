@@ -65,7 +65,7 @@ class Device : public NimBLEClientCallbacks {
     virtual void onRightButtonClick() {}
     virtual void onLeftButtonClick() {}
     virtual void onExit() {}
-    virtual void onPause(bool fullStop = false) {}
+    virtual void onPause() {}
     virtual void onResume() {}
     virtual void onConnect() {}
     virtual void onDisconnect() {}

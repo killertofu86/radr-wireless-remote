@@ -153,7 +153,7 @@ namespace actions {
         if (device == nullptr) {
             return;
         }
-        device->onPause(true);
+        device->onPause();
     };
 
     auto softPause = []() {
@@ -161,6 +161,13 @@ namespace actions {
             return;
         }
         device->onPause();
+    };
+
+    auto resume = []() {
+        if (device == nullptr) {
+            return;
+        }
+        device->onResume();
     };
 
     auto start = []() {
@@ -189,7 +196,7 @@ namespace actions {
         // Default tab: OSSM if connected, RADR otherwise
         if (device != nullptr && device->isConnected) {
             device->onMenuOpen();  // OSSM → menu.idle
-            activeTab = 0;  // OSSM tab
+            activeTab = 0;         // OSSM tab
             activeMenu = &ossmMenu;
             activeMenuCount = numOssmMenu;
         } else {
@@ -217,12 +224,11 @@ namespace actions {
         if (ossmRestartTimer != nullptr) {
             xTimerDelete(ossmRestartTimer, 0);
         }
-        ossmRestartTimer = xTimerCreate(
-            "ossmRestart", pdMS_TO_TICKS(8500), pdFALSE, nullptr,
-            [](TimerHandle_t) {
-                ossmRestartTimer = nullptr;
-                fireStateMachineDoneEvent();
-            });
+        ossmRestartTimer = xTimerCreate("ossmRestart", pdMS_TO_TICKS(8500),
+                                        pdFALSE, nullptr, [](TimerHandle_t) {
+                                            ossmRestartTimer = nullptr;
+                                            fireStateMachineDoneEvent();
+                                        });
         xTimerStart(ossmRestartTimer, 0);
     };
 
@@ -244,12 +250,11 @@ namespace actions {
         if (ossmUpdateTimer != nullptr) {
             xTimerDelete(ossmUpdateTimer, 0);
         }
-        ossmUpdateTimer = xTimerCreate(
-            "ossmUpdate", pdMS_TO_TICKS(90000), pdFALSE, nullptr,
-            [](TimerHandle_t) {
-                ossmUpdateTimer = nullptr;
-                fireStateMachineDoneEvent();
-            });
+        ossmUpdateTimer = xTimerCreate("ossmUpdate", pdMS_TO_TICKS(90000),
+                                       pdFALSE, nullptr, [](TimerHandle_t) {
+                                           ossmUpdateTimer = nullptr;
+                                           fireStateMachineDoneEvent();
+                                       });
         xTimerStart(ossmUpdateTimer, 0);
     };
 
