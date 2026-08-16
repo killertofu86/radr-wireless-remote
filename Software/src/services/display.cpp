@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "esp_log.h"
-#include "images/miku_taur.h"
+#include "images/current_build.h"
 
 static const char* TAG = "DISPLAY";
 
@@ -45,7 +45,7 @@ bool initDisplay() {
     tft.fillScreen(ST77XX_BLACK);
     tft.setTextColor(ST77XX_WHITE);
     tft.setTextSize(1);
-    drawImage(MIKU_TAUR_H, MIKU_TAUR_H_WIDTH, MIKU_TAUR_H_WIDTH);
+    drawImage(CURRENT_BUILD_IMAGE, CURRENT_BUILD_WIDTH, CURRENT_BUILD_HEIGHT);
     sleep(5);
     tft.fillScreen(ST77XX_BLACK);
     return true;
