@@ -36,6 +36,7 @@ struct ossm_remote_state {
             "main_menu"_s + on_entry<_> / drawMainMenu,
             "main_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::DEVICE_SEARCH)] = "device_search"_s,
             "main_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::SETTINGS)] = "settings_menu"_s,
+            "main_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::RADR_STARTUP_IMAGE)] = "startup_image_menu"_s,
             "main_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::DEEP_SLEEP)] = "deep_sleep"_s,
             "main_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::RESTART)] = "restart"_s,
             "main_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::OSSM_STROKE_ENGINE)] / sendStrokeEngine = "device_draw_control"_s,
@@ -59,6 +60,12 @@ struct ossm_remote_state {
             "settings_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::UPDATE)] = "update.wifi"_s,
             "settings_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::RESTART)] = "restart"_s,
 
+            "startup_image_menu"_s + on_entry<_> / []() { drawStartupImageMenu(); },
+            "startup_image_menu"_s + boost::sml::on_exit<_> / []() { stopMenuTask(); },
+            "startup_image_menu"_s + event<left_button_pressed> = "main_menu"_s,
+            "startup_image_menu"_s + event<right_button_pressed>[isOption<>(MenuItemE::BACK)] = "main_menu"_s,
+            "startup_image_menu"_s + event<right_button_pressed> / []() { selectStartupImage(); },
+            "startup_image_menu"_s + event<disconnected_event> / disconnect = "main_menu"_s,
 
 
             "update"_s + on_entry<_> / (drawPage(updatePage), startTask(updateTask, updateTaskName, &updateTaskHandle)),

@@ -24,5 +24,8 @@ void stopMenuTask();
 void drawMenuWithTabs();
 void drawTabBar();
 void drawDeviceListMenu();
+void drawStartupImageMenu();
+void selectStartupImage();
+bool isStartupImageMenuActive();
 
 #endif

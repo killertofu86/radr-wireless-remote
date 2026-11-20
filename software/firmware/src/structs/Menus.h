@@ -31,7 +31,11 @@ enum MenuItemE {
     OSSM_RESTART,
     OSSM_SETTINGS_MAIN_MENU,
     OSSM_SETTING_FIELD,
-    OSSM_SETTINGS_INFO
+    OSSM_SETTINGS_INFO,
+    RADR_STARTUP_IMAGE,
+    STARTUP_IMAGE_FIXED,
+    STARTUP_IMAGE_SHUFFLE,
+    STARTUP_IMAGE_ORDER
 };
 
 struct MenuItem {
@@ -54,6 +58,7 @@ struct MenuItem {
 inline std::vector<MenuItem> mainMenu = {
     {MenuItemE::DEVICE_SEARCH, OSSM_CONTROLLER_NAME, researchAndDesireWaves},
     {MenuItemE::SETTINGS, SETTINGS_NAME, bitmap_settings},
+    {MenuItemE::RADR_STARTUP_IMAGE, "Startup Image", bitmap_switch},
     {MenuItemE::DEEP_SLEEP, DEEP_SLEEP_NAME, bitmap_sleep}};
 
 inline const int numMainMenu = mainMenu.size();

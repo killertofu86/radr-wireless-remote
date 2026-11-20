@@ -204,8 +204,8 @@ namespace actions {
         setLed(LEDColors::idle, 50,
                1500);  // Soft white idle (Blends with backlight bleed)
 
-        // Default tab: OSSM if connected, RADR otherwise
-        if (device != nullptr && device->isConnected) {
+        // Returning from the startup image menu keeps its RADR tab open.
+        if (!isStartupImageMenuActive() && device != nullptr && device->isConnected) {
             device->onMenuOpen();  // OSSM → menu.idle
             activeTab = 0;         // OSSM tab
             activeMenu = &ossmMenu;

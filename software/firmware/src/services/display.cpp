@@ -1,6 +1,6 @@
 #include "display.h"
 #include "esp_log.h"
-#include "images/current_build.h"
+#include "images/startupImages.h"
 #include <vector>
 
 static const char* TAG = "DISPLAY";
@@ -52,7 +52,7 @@ bool initDisplay()
     tft.fillScreen(ST77XX_BLACK);
     tft.setTextColor(ST77XX_WHITE);
     tft.setTextSize(1);
-    drawImage(CURRENT_BUILD_IMAGE, CURRENT_BUILD_WIDTH, CURRENT_BUILD_HEIGHT);
+    startupImages::draw();
     delay(5000);
     tft.fillScreen(ST77XX_BLACK);
 
@@ -93,7 +93,7 @@ void drawImage(const uint16_t* imageData, uint16_t width, uint16_t height) {
         uint16_t lines = (row + LINES_PER_CHUNK > height) ? (height - row) : LINES_PER_CHUNK;
         const int xOffset = (320 - (int)width) / 2;
         const int yOffset = (240 - (int)height) / 2;
-        memcpy_P(buffer.data(), &imageData[row * width], BUFFER_SIZE * sizeof(uint16_t));
+        memcpy_P(buffer.data(), &imageData[row * width], width * lines * sizeof(uint16_t));
         tft.drawRGBBitmap(xOffset, row + yOffset, buffer.data(), width, lines);
     }
 }

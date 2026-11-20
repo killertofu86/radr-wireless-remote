@@ -13,6 +13,7 @@
 
 #include "displayUtils.h"
 #include "controller.h"
+#include "images/startupImages.h"
 #include "services/display.h"
 
 TaskHandle_t menuTaskHandle = NULL;
@@ -228,6 +229,7 @@ void drawMenuTask(void *pvParameters) {
     auto isInCorrectState = []() {
         return stateMachine->is("main_menu"_s) ||
                stateMachine->is("settings_menu"_s) ||
+               stateMachine->is("startup_image_menu"_s) ||
                stateMachine->is("device_menu"_s) ||
                stateMachine->is("ossm_settings"_s);
     };
@@ -435,6 +437,63 @@ void drawMenu() {
     vTaskDelay(10 / portTICK_PERIOD_MS);  // Reduced from 50ms to 10ms
     createPsramTask(drawMenuTask, "drawMenuTask", 5 * configMINIMAL_STACK_SIZE,
                     NULL, 5, &menuTaskHandle, 1);
+}
+
+static std::vector<MenuItem> startupImageMenu;
+
+bool isStartupImageMenuActive() { return activeMenu == &startupImageMenu; }
+
+static void showStartupImageMenu(int failedOption = -1) {
+    using startupImages::Mode;
+    using startupImages::Selection;
+
+    stopMenuTask();
+    startupImageMenu.clear();
+    startupImageMenu.push_back({MenuItemE::BACK, GO_BACK_NAME, bitmap_back});
+
+    const Selection selected = startupImages::selected();
+    int selectedOption = 0;
+    const auto addOption = [&](MenuItemE id, const char *name, Selection choice) {
+        const int index = startupImageMenu.size();
+        std::string label = name;
+        if (choice == selected) {
+            selectedOption = index;
+            label += " (active)";
+        }
+        if (index == failedOption) label += " (save failed)";
+        MenuItem item{id, std::move(label), bitmap_switch};
+        item.metaIndex = choice.imageIndex;
+        startupImageMenu.push_back(std::move(item));
+    };
+
+    addOption(MenuItemE::STARTUP_IMAGE_SHUFFLE, "Shuffle", {Mode::Shuffle});
+    addOption(MenuItemE::STARTUP_IMAGE_ORDER, "Fixed Order", {Mode::FixedOrder});
+    for (uint8_t index = 0; index < startupImages::imageCount(); ++index) {
+        addOption(MenuItemE::STARTUP_IMAGE_FIXED, startupImages::imageName(index),
+                  {Mode::FixedImage, index});
+    }
+
+    tabBarHeight = 0;
+    activeMenu = &startupImageMenu;
+    activeMenuCount = startupImageMenu.size();
+    currentOption = failedOption >= 0 ? failedOption : selectedOption;
+    drawMenu();
+}
+
+void drawStartupImageMenu() { showStartupImageMenu(); }
+
+void selectStartupImage() {
+    const int index = rightEncoder.readEncoder();
+    if (index <= 0 || index >= static_cast<int>(startupImageMenu.size())) return;
+
+    using startupImages::Mode;
+    const MenuItem &item = startupImageMenu[index];
+    Mode mode = Mode::FixedImage;
+    if (item.id == MenuItemE::STARTUP_IMAGE_SHUFFLE) mode = Mode::Shuffle;
+    else if (item.id == MenuItemE::STARTUP_IMAGE_ORDER) mode = Mode::FixedOrder;
+    const bool saved =
+        startupImages::select({mode, static_cast<uint8_t>(item.metaIndex)});
+    showStartupImageMenu(saved ? -1 : index);
 }
 
 // Device list management
