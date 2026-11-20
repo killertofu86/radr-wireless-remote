@@ -42,6 +42,36 @@ We wanted an open source wireless remote that could control not just the ossm, b
 
 
 
+## Private Firmware (`private-main`)
+
+Der [private Update-Workflow](docs/PRIVATE_FIRMWARE_UPDATE_WORKFLOW.md) beschreibt die Integration neuer Upstream-Versionen und die Backups auf GitHub und Codeberg.
+
+### Startbilder ergänzen
+
+Das Display hat 320 × 240 Pixel im Querformat (4:3). Die Bilddaten liegen als RGB565 im Firmware-Flash. Jedes neue Bild braucht deshalb einen neuen Build und einen Flash.
+
+1. Das Bild mit dem vorhandenen Konverter umwandeln. Für Python werden Pillow und NumPy benötigt. Der Konverter skaliert proportional und legt den Header unter `src/images/` ab.
+
+   ```sh
+   cd software/firmware
+   python src/helpers/image_converter.py /pfad/zum/neuen_bild.jpg
+   ```
+
+2. Den erzeugten Header in `src/images/startupImages.cpp` einbinden und am Ende von `pictures` einen Eintrag mit Anzeigename, Pixelarray, Breite, Höhe und einer neuen ID ergänzen. Die IDs von 0 bis 31 werden für die Bildauswahl gespeichert. Bestehende IDs bleiben den bisherigen Bildern zugeordnet. ID 4 ist für das entfernte RANDR-Testbild reserviert.
+3. Der Konverter setzt das neue Bild in `src/images/current_build.h` als Standard. Falls der bisherige Standard gelten soll, die bisherige Auswahl in dieser Datei wiederherstellen. Eine am RADR gespeicherte Auswahl hat Vorrang vor dem Standard aus dem Build.
+4. Die Firmware im selben Verzeichnis bauen und nach erfolgreichem Build auf den verifizierten RADR flashen. `/dev/ttyUSB0` ist ein Beispiel für den USB-Port.
+
+   ```sh
+   pio run -e development -t buildprog
+   pio run -e development -t upload --upload-port /dev/ttyUSB0
+   ```
+
+5. Am Gerät unter **RADR → Startup Image** das neue Bild auswählen und neu starten. **Shuffle** durchläuft alle Bilder in zufälliger Reihenfolge, **Fixed Order** folgt der Reihenfolge von `pictures`. Beide Modi wechseln das Bild bei jedem Start.
+
+### Möglicher Upstream-PR
+
+Für das Menü einen frischen Feature-Branch von `upstream/staging` erstellen und den PR in `staging` des offiziellen Repositories öffnen. Den Menücode mit einem neutralen, für Upstream geeigneten Standardbild übernehmen. Private Bilddateien und private Commits gehören zu `private-main`. Für den PR gelten die Build- und Hardware-Validierung des offiziellen Repositories. [Repository-Regeln](AGENTS.md)
+
 ## Contributing
 
 Fetch `origin`, branch feature work from `origin/staging`, and open the pull request back into `staging`. Reserve direct production hotfixes for branches created from `origin/main`; open those PRs into `main` and begin the PR title with the standalone word `hotfix` (case-insensitive).

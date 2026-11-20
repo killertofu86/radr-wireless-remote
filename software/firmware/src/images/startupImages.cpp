@@ -11,7 +11,6 @@
 #include "hsc1.h"
 #include "hsc2.h"
 #include "miku_taur.h"
-#include "randr.h"
 #include "services/display.h"
 #include "taur1.h"
 #include "zyl1.h"
@@ -20,43 +19,54 @@ namespace startupImages {
 namespace {
 
 struct Bitmap {
+    uint8_t id;
     const char *name;
     const uint16_t *pixels;
     uint16_t width;
     uint16_t height;
 };
 
-constexpr Bitmap buildDefault{"", CURRENT_BUILD_IMAGE, CURRENT_BUILD_WIDTH,
+constexpr uint8_t pictureIdLimit = 32;
+constexpr Bitmap buildDefault{pictureIdLimit, "", CURRENT_BUILD_IMAGE, CURRENT_BUILD_WIDTH,
                               CURRENT_BUILD_HEIGHT};
-// Append new images so stored selections continue to use the same indices.
+// IDs are stored in NVS. Keep them in ascending order and leave ID 4 reserved
+// for the removed RANDR picture.
 constexpr Bitmap pictures[] = {
-    {"HSC1", HSC1, HSC1_WIDTH, HSC1_HEIGHT},
-    {"HSC2", HSC2, HSC2_WIDTH, HSC2_HEIGHT},
-    {"DRA", DRA, DRA_WIDTH, DRA_HEIGHT},
-    {"Miku Taur", MIKU_TAUR_H, MIKU_TAUR_H_WIDTH, MIKU_TAUR_H_HEIGHT},
-    {"RANDR", RANDR_H, RANDR_H_WIDTH, RANDR_H_HEIGHT},
-    {"Taur1", TAUR1_H, TAUR1_H_WIDTH, TAUR1_H_HEIGHT},
-    {"Zyl1", B415DFF9B09D08A65DCAC1322940468B,
+    {0, "HSC1", HSC1, HSC1_WIDTH, HSC1_HEIGHT},
+    {1, "HSC2", HSC2, HSC2_WIDTH, HSC2_HEIGHT},
+    {2, "DRA", DRA, DRA_WIDTH, DRA_HEIGHT},
+    {3, "Miku Taur", MIKU_TAUR_H, MIKU_TAUR_H_WIDTH, MIKU_TAUR_H_HEIGHT},
+    {5, "Taur1", TAUR1_H, TAUR1_H_WIDTH, TAUR1_H_HEIGHT},
+    {6, "Zyl1", B415DFF9B09D08A65DCAC1322940468B,
      B415DFF9B09D08A65DCAC1322940468B_WIDTH,
      B415DFF9B09D08A65DCAC1322940468B_HEIGHT},
 };
-static_assert(std::size(pictures) > 1 && std::size(pictures) <= 32);
+static_assert(std::size(pictures) > 1 && std::size(pictures) <= pictureIdLimit);
 constexpr uint8_t pictureCount = std::size(pictures);
-constexpr uint32_t allPictures = UINT32_MAX >> (32 - pictureCount);
+constexpr uint32_t pictureBit(uint8_t id) { return uint32_t{1} << id; }
+constexpr uint32_t allPictures = [] {
+    uint32_t mask = 0;
+    for (const auto &picture : pictures) mask |= pictureBit(picture.id);
+    return mask;
+}();
 constexpr char preferenceNamespace[] = "startup-image";
 constexpr uint8_t firstFixedImage = static_cast<uint8_t>(Mode::FixedImage);
 
 struct ShuffleState {
     uint32_t remaining = 0;
-    uint32_t last = pictureCount;
+    uint32_t last = pictureIdLimit;
 };
 
 Selection savedSelection;
 
 uint8_t nextInOrder(Preferences &preferences) {
-    const uint8_t stored = preferences.getUChar("next", 0);
-    const uint8_t index = stored < pictureCount ? stored : 0;
-    preferences.putUChar("next", (index + 1) % pictureCount);
+    const uint8_t storedId = preferences.getUChar("next", pictures[0].id);
+    uint8_t index = 0;
+    while (index < pictureCount && pictures[index].id < storedId) ++index;
+    if (index == pictureCount) index = 0;
+
+    const uint8_t nextIndex = (index + 1) % pictureCount;
+    preferences.putUChar("next", pictures[nextIndex].id);
     return index;
 }
 
@@ -72,17 +82,19 @@ uint8_t nextShuffled(Preferences &preferences) {
         shuffle.remaining = allPictures;
         available = allPictures;
         // Start a fresh cycle with a different picture than the previous one.
-        if (shuffle.last < pictureCount) available &= ~(1u << shuffle.last);
+        if (shuffle.last < pictureIdLimit) available &= ~pictureBit(shuffle.last);
     }
 
     std::array<uint8_t, pictureCount> candidates{};
     uint8_t candidateCount = 0;
     for (uint8_t index = 0; index < pictureCount; ++index) {
-        if (available & (1u << index)) candidates[candidateCount++] = index;
+        if (available & pictureBit(pictures[index].id)) {
+            candidates[candidateCount++] = index;
+        }
     }
     const uint8_t index = candidates[esp_random() % candidateCount];
-    shuffle.remaining &= ~(1u << index);
-    shuffle.last = index;
+    shuffle.remaining &= ~pictureBit(pictures[index].id);
+    shuffle.last = pictures[index].id;
     preferences.putBytes("shuffle", &shuffle, sizeof(shuffle));
     return index;
 }
@@ -90,10 +102,14 @@ uint8_t nextShuffled(Preferences &preferences) {
 const Bitmap &pickImage(Preferences &preferences) {
     const uint8_t stored = preferences.getUChar("mode", 0);
     if (stored >= firstFixedImage) {
-        const uint8_t index = stored - firstFixedImage;
-        if (index >= pictureCount) return buildDefault;
-        savedSelection = {Mode::FixedImage, index};
-        return pictures[index];
+        const uint8_t id = stored - firstFixedImage;
+        for (uint8_t index = 0; index < pictureCount; ++index) {
+            if (pictures[index].id == id) {
+                savedSelection = {Mode::FixedImage, index};
+                return pictures[index];
+            }
+        }
+        return buildDefault;
     }
 
     savedSelection = {static_cast<Mode>(stored)};
@@ -138,7 +154,7 @@ bool select(Selection selection) {
     if (value > firstFixedImage) return false;
     if (selection.mode == Mode::FixedImage) {
         if (selection.imageIndex >= pictureCount) return false;
-        value += selection.imageIndex;
+        value += pictures[selection.imageIndex].id;
     }
 
     Preferences preferences;

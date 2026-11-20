@@ -34,7 +34,7 @@ Dieser Ablauf hält eigene RADR-Anpassungen von Upstream-Updates getrennt. `priv
    git merge --no-ff upstream/main -m "Merge upstream/main <version> into integrate/upstream-<version>"
    ```
 
-4. Konflikte gezielt prüfen und auflösen. Eigene Bildauswahl bleibt über `software/firmware/src/images/current_build.h` erhalten. Bei Änderungen in `software/firmware/src/services/display.cpp` müssen zugleich die aktuellen Upstream-Änderungen an der Display-/PWM-API übernommen werden.
+4. Konflikte gezielt prüfen und auflösen. Die private Bildliste liegt in `software/firmware/src/images/startupImages.cpp`, das Standardbild in `software/firmware/src/images/current_build.h`. Bei Änderungen in `software/firmware/src/services/display.cpp` auch die aktuelle Upstream-Display- und PWM-API übernehmen. [Startbilder ergänzen](../README.md#startbilder-ergänzen)
 
 5. Nach jeder Konfliktauflösung den Merge abschließen und den Baum prüfen:
 
