@@ -19,7 +19,7 @@ jobs:
       - name: Check for firmware or release workflow changes
         id: check_changes
         run: |
-          if git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep -Eq "^(Software/|\.github/scripts/|\.github/workflows/)"; then
+          if git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep -Eq "^(software/firmware|\.github/scripts|\.github/workflows)/|^software/scripts/[^/]+\.sh$"; then
             echo "Firmware-affecting changes detected"
             echo "changes_detected=true" >> $GITHUB_OUTPUT
           else
@@ -31,6 +31,9 @@ jobs:
     needs: check_changes
     if: needs.check_changes.outputs.changes_detected == 'true'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: software/firmware
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,40 +51,61 @@ jobs:
           python-version: "3.12"
 
       - name: Install PlatformIO Core
-        run: pip install --upgrade platformio
+        run: pip install platformio==6.1.19
+
+      - name: Run native unit tests
+        run: pio test -e test_native
 
       - name: Build PlatformIO Project
         run: |
-          cd Software
           pio run -e staging
           pio run -e production
 
       - name: Build LittleFS filesystem image
         run: |
-          cd Software
           pio run --target buildfs -e staging
           pio run --target buildfs -e production
 
+      - name: Install pinned esptool runtime
+        run: python -m pip install "$HOME/.platformio/packages/tool-esptoolpy"
+
+      - name: Build merged web installers
+        run: |
+          for PIO_ENV in staging production; do
+            python ../../.github/scripts/build_web_installer.py \
+              --profile esp32s3-16mb \
+              --build-dir ".pio/build/$PIO_ENV" \
+              --filesystem ".pio/build/$PIO_ENV/littlefs.bin" \
+              --partition-table config/partition.csv \
+              --filesystem-partition spiffs \
+              --output ".pio/build/$PIO_ENV/web-installer.bin"
+          done
+
       - name: Test immutable publisher
         run: |
-          python .github/scripts/test_publish_immutable_firmware.py
-          python .github/scripts/test_release_workflow.py
+          python ../../.github/scripts/test_build_web_installer.py
+          python ../../.github/scripts/test_publish_immutable_firmware.py
+          python ../../.github/scripts/test_release_workflow.py
 
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
           name: firmware-bin
           path: |
-            Software/.pio/build/production/firmware.bin
-            Software/.pio/build/production/partitions.bin
-            Software/.pio/build/production/bootloader.bin
-            Software/.pio/build/production/littlefs.bin
-          retention-days: 1
+            software/firmware/.pio/build/production/firmware.bin
+            software/firmware/.pio/build/production/partitions.bin
+            software/firmware/.pio/build/production/bootloader.bin
+            software/firmware/.pio/build/production/littlefs.bin
+            software/firmware/.pio/build/production/web-installer.bin
+          retention-days: 14
 
   check:
     needs: check_changes
     if: needs.check_changes.outputs.changes_detected == 'true'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: software/firmware
     steps:
       - uses: actions/checkout@v4
         with:
@@ -96,13 +120,24 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.9"
+          python-version: "3.12"
 
       - name: Install PlatformIO Core
-        run: pip install --upgrade platformio
+        run: pip install platformio==6.1.19
 
       - name: Check PlatformIO Project
         run: |
-          cd Software
+          pio pkg install -e production
           pio check --skip-packages --fail-on-defect high -e production -f src
+
   check_docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify legacy documentation remains retired
+        run: |
+          if [[ -d Documentation ]]; then
+            echo "The retired in-repository documentation workspace was restored"
+            exit 1
+          fi
