@@ -34,7 +34,7 @@ Dieser Ablauf hält eigene RADR-Anpassungen von Upstream-Updates getrennt. `priv
    git merge --no-ff upstream/main -m "Merge upstream/main <version> into integrate/upstream-<version>"
    ```
 
-4. Konflikte gezielt prüfen und auflösen. Eigene Bildauswahl bleibt über `Software/src/images/current_build.h` erhalten. Bei Änderungen in `Software/src/services/display.cpp` müssen zugleich die aktuellen Upstream-Änderungen an der Display-/PWM-API übernommen werden.
+4. Konflikte gezielt prüfen und auflösen. Eigene Bildauswahl bleibt über `software/firmware/src/images/current_build.h` erhalten. Bei Änderungen in `software/firmware/src/services/display.cpp` müssen zugleich die aktuellen Upstream-Änderungen an der Display-/PWM-API übernommen werden.
 
 5. Nach jeder Konfliktauflösung den Merge abschließen und den Baum prüfen:
 
@@ -47,14 +47,14 @@ Dieser Ablauf hält eigene RADR-Anpassungen von Upstream-Updates getrennt. `priv
 6. Firmware bauen. PlatformIO muss über die auf dukix eingerichtete Umgebung bzw. seinen vollständigen Pfad aufgerufen werden:
 
    ```bash
-   cd Software
-   pio run -e development
+   cd software/firmware
+   pio run -e development -t buildprog
    ```
 
    Bei Änderungen an Release-Konfiguration oder Abhängigkeiten auch `production` bauen:
 
    ```bash
-   pio run -e production
+   pio run -e production -t buildprog
    ```
 
 7. Erst nach erfolgreichen Builds flashen und testen: Startbild/Display, Buttons, Encoder, BLE-Verbindung, OSSM-Steuerung sowie Pause/Stop. Bei Änderungen an der Bewegungssteuerung nur mit spannungsfrei geprüfter Mechanik und kontrolliertem, kurzen Testlauf arbeiten.

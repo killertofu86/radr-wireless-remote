@@ -1,0 +1,7 @@
+#pragma once
+
+#include "hsc1.h"
+
+#define CURRENT_BUILD_IMAGE HSC1
+#define CURRENT_BUILD_WIDTH HSC1_WIDTH
+#define CURRENT_BUILD_HEIGHT HSC1_HEIGHT
