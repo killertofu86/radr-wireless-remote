@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <atomic>
 #include "utils/psramTask.h"
 
 #include <Adafruit_GFX.h>
@@ -462,6 +463,36 @@ namespace actions {
     inline auto showMenuBlocked = []() {
         if (device == nullptr) return;
         device->onMenuBlocked();
+    };
+
+    inline std::atomic<uint32_t> depthZeroPresetDeadline{0};
+
+    inline bool depthZeroPresetReady() {
+        const uint32_t deadline = depthZeroPresetDeadline.load();
+        return deadline != 0 && static_cast<int32_t>(millis() - deadline) >= 0;
+    }
+
+    inline auto depthZeroPresetPending = []() {
+        return depthZeroPresetDeadline.load() != 0;
+    };
+
+    inline auto cancelDepthZeroPreset = []() { depthZeroPresetDeadline.store(0); };
+
+    inline auto prepareDepthZeroPreset = []() {
+        cancelDepthZeroPreset();
+        if (device == nullptr || !device->prepareDepthZeroPreset()) return;
+
+        // Let the OSSM apply the preset on its control loop at speed zero.
+        // Pause and mode changes can cancel the start during this interval.
+        const uint32_t deadline = millis() + 400;
+        depthZeroPresetDeadline.store(deadline == 0 ? 1 : deadline);
+    };
+
+    inline auto startDepthZeroPreset = []() {
+        if (depthZeroPresetDeadline.exchange(0) == 0) return;
+        if (device != nullptr && digitalRead(pins::BTN_UNDER_C) != LOW) {
+            device->startDepthZeroPreset();
+        }
     };
 
     // OSSM machine settings

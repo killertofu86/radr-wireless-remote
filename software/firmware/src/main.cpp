@@ -103,6 +103,10 @@ void setup() {
         setNotIdle("under_left_btn");
         stateMachine->process_event(left_button_pressed());
     });
+    underLeftBtn.attachLongPressStart([]() {
+        setNotIdle("under_left_btn");
+        stateMachine->process_event(left_button_long_pressed());
+    });
     underCenterBtn = OneButton(pins::BTN_UNDER_C, true, true);
     underCenterBtn.attachClick([]() {
         setNotIdle("under_center_btn");
@@ -146,6 +150,9 @@ void setup() {
                 underLeftBtn.tick();
                 underCenterBtn.tick();
                 underRightBtn.tick();
+                if (actions::depthZeroPresetReady()) {
+                    stateMachine->process_event(depth_zero_preset_ready{});
+                }
                 if (wmMutex != nullptr &&
                     xSemaphoreTake(wmMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
                     wm.process();

@@ -23,6 +23,10 @@ struct right_shoulder_pressed : public base_event {};
 
 struct left_button_pressed : public base_event {};
 
+struct left_button_long_pressed : public base_event {};
+
+struct depth_zero_preset_ready : public base_event {};
+
 struct wifi_connected : public base_event {};
 
 struct right_button_pressed : public base_event {};

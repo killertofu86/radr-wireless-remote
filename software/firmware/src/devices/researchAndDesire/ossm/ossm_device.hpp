@@ -161,7 +161,6 @@ class OSSM : public Device {
         std::map<String, float *> leftParams = {
             {"Speed", &this->settings.speed}};
         leftEncoderDial = draw<EncoderDial>(EncoderDial::Props{
-            .encoder = &leftEncoder,
             .parameters = leftParams,
             .focusedIndex = &this->leftFocusedIndex,
             .x = 0 + 5,
@@ -183,7 +182,6 @@ class OSSM : public Device {
             {"Sens.", &this->settings.sensation},
             {"Stroke", &this->settings.stroke}};
         rightEncoderDial = draw<EncoderDial>(EncoderDial::Props{
-            .encoder = &rightEncoder,
             .parameters = rightParams,
             .focusedIndex = &this->rightFocusedIndex,
             .x = (int16_t)(DISPLAY_WIDTH - 90 - 5),
@@ -421,6 +419,76 @@ class OSSM : public Device {
         }
     }
 
+    static constexpr int DEPTH_ZERO_PRESET_DEPTH = 0;
+    static constexpr int DEPTH_ZERO_PRESET_STROKE = 50;
+    static constexpr int DEPTH_ZERO_PRESET_SPEED = 2;
+    static constexpr int DEPTH_ZERO_PRESET_PATTERN =
+        static_cast<int>(StrokePatterns::SimpleStroke);
+
+    bool canApplyDepthZeroPreset() {
+        return isConnected && pClient != nullptr && pClient->isConnected() &&
+               operationMode == OssmMode::StrokeEngine && isPaused &&
+               leftEncoder.readEncoder() == 0;
+    }
+
+    void showDepthZeroPresetError(const char *text) {
+        if (menuButton != nullptr) menuButton->flashText(text, MENU_BLOCKED_MS);
+    }
+
+    bool prepareDepthZeroPreset() override {
+        if (!canApplyDepthZeroPreset()) {
+            onMenuBlocked();
+            return false;
+        }
+
+        // Every preparation command must be delivered before a positive speed
+        // can be sent. Do not depend on the OSSM's separate telemetry payload.
+        if (!sendMotionSetting("speed", 0, true)) {
+            showDepthZeroPresetError("BLE Write Fail");
+            return false;
+        }
+        settings.speed = 0;
+        if (!sendMotionSetting("pattern", DEPTH_ZERO_PRESET_PATTERN, true)) {
+            showDepthZeroPresetError("BLE Write Fail");
+            return false;
+        }
+        settings.pattern = StrokePatterns::SimpleStroke;
+
+        if (!sendMotionSetting("depth", DEPTH_ZERO_PRESET_DEPTH, true)) {
+            showDepthZeroPresetError("BLE Write Fail");
+            return false;
+        }
+        settings.depth = DEPTH_ZERO_PRESET_DEPTH;
+        const bool strokeSent =
+            sendMotionSetting("stroke", DEPTH_ZERO_PRESET_STROKE, true);
+        if (strokeSent) settings.stroke = DEPTH_ZERO_PRESET_STROKE;
+        syncRightEncoder();
+        if (!strokeSent) showDepthZeroPresetError("BLE Write Fail");
+        return strokeSent;
+    }
+
+    void startDepthZeroPreset() override {
+        if (!canApplyDepthZeroPreset() || settings.speed != 0 ||
+            settings.pattern != StrokePatterns::SimpleStroke ||
+            settings.depth != DEPTH_ZERO_PRESET_DEPTH ||
+            settings.stroke != DEPTH_ZERO_PRESET_STROKE) {
+            ESP_LOGW(TAG,
+                     "Depth-zero preset cancelled: paused=%d speed=%.1f left=%ld pattern=%d depth=%.1f stroke=%.1f",
+                     isPaused, settings.speed, leftEncoder.readEncoder(),
+                     static_cast<int>(settings.pattern), settings.depth, settings.stroke);
+            showDepthZeroPresetError("Preset Cancelled");
+            return;
+        }
+        if (!setSpeed(DEPTH_ZERO_PRESET_SPEED)) {
+            settings.speed = 0;
+            updateMenuButtonState();
+            showDepthZeroPresetError("BLE Write Fail");
+            return;
+        }
+        syncLeftEncoder();
+        onResume();
+    }
+
     // Lights the Menu button whenever it would open the settings pages.
     void updateMenuButtonState() {
         TextButton *button = menuButton;
@@ -484,6 +552,11 @@ class OSSM : public Device {
         drawMenu();
     }
 
+    bool sendMotionSetting(const char *name, int value, bool response = false) {
+        return send("command", std::string("set:") + name + ':' +
+                                   std::to_string(value), response);
+    }
+
     // Helper functions.
     bool setSpeed(int speed) {
         // Send if value changed OR if encoder has moved
@@ -494,8 +567,7 @@ class OSSM : public Device {
         settings.speed = speed;
         updateMenuButtonState();
         speed = constrain(speed, 0, 100);
-        return send("command",
-                    std::string("set:speed:") + std::to_string(speed));
+        return sendMotionSetting("speed", speed);
     }
 
     float getDepth() { return constrain(settings.depth, 0.0f, 100.0f); }
@@ -508,8 +580,7 @@ class OSSM : public Device {
         }
         settings.depth = depth;
         depth = constrain(depth, 0, 100);
-        return send("command",
-                    std::string("set:depth:") + std::to_string(depth));
+        return sendMotionSetting("depth", depth);
     }
 
     float getStroke() { return constrain(settings.stroke, 0.0f, 100.0f); }
@@ -522,8 +593,7 @@ class OSSM : public Device {
         }
         settings.stroke = stroke;
         stroke = constrain(stroke, 0, 100);
-        return send("command",
-                    std::string("set:stroke:") + std::to_string(stroke));
+        return sendMotionSetting("stroke", stroke);
     }
 
     bool setSensation(int sensation) {

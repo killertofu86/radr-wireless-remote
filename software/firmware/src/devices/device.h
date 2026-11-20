@@ -85,6 +85,8 @@ class Device : public NimBLEClientCallbacks {
     // Pressing it otherwise calls onMenuBlocked() so the press is not silent.
     virtual bool canOpenSettings() const { return isPaused; }
     virtual void onMenuBlocked() {}
+    virtual bool prepareDepthZeroPreset() { return false; }
+    virtual void startDepthZeroPreset() {}
 
     // True for devices whose Menu button opens the machine settings pages
     // instead of the main menu.
@@ -150,7 +152,8 @@ class Device : public NimBLEClientCallbacks {
 
     void onDisconnect(NimBLEClient *pClient, int reason) override;
 
-    bool send(const std::string &command, const std::string &value);
+    bool send(const std::string &command, const std::string &value,
+              bool response = false);
 
     std::string readString(const std::string &characteristicName);
 

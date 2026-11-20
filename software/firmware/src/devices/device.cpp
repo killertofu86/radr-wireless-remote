@@ -302,7 +302,8 @@ void Device::onDisconnect(NimBLEClient *pClient, int reason) {
         nullptr, 0, pdMS_TO_TICKS(10));
 }
 
-bool Device::send(const std::string &command, const std::string &value) {
+bool Device::send(const std::string &command, const std::string &value,
+                  bool response) {
     auto it = characteristics.find(command);
     if (it == characteristics.end()) {
         ESP_LOGW(TAG, "Characteristic '%s' not found for device '%s'",
@@ -331,7 +332,7 @@ bool Device::send(const std::string &command, const std::string &value) {
     if (it->second.encode) {
         encodedValue = it->second.encode(value);
     }
-    return pChr->writeValue(encodedValue);
+    return pChr->writeValue(encodedValue, response);
 }
 
 std::string Device::readString(const std::string &characteristicName) {

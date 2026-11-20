@@ -58,7 +58,7 @@ class EncoderDial : public DisplayObject {
         }
     }
 
-    AiEsp32RotaryEncoder &encoder;
+    AiEsp32RotaryEncoder *const encoder;
 
   public:
     struct Props {
@@ -79,7 +79,7 @@ class EncoderDial : public DisplayObject {
         : DisplayObject(props.x, props.y, props.width, props.height),
           parameters(props.parameters),
           color(ST77XX_WHITE),
-          encoder(*props.encoder),
+          encoder(props.encoder),
           mapToLeftLed(props.mapToLeftLed),
           mapToRightLed(props.mapToRightLed) {
         focusedIndex = props.focusedIndex;
@@ -118,9 +118,9 @@ class EncoderDial : public DisplayObject {
     }
 
     bool shouldDraw() override {
-        // use focused index to get the parameter value
-        int currentValue = encoder.readEncoder();
-        if (parameters.size() > 0) {
+        // A display-only dial uses parameters set by its controller.
+        if (encoder != nullptr && !parameters.empty()) {
+            const int currentValue = encoder->readEncoder();
             auto it = parameters.begin();
             std::advance(it, *focusedIndex);
             if (it != parameters.end() && it->second != nullptr) {
